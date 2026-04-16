@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Main Builder</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  height: 100vh;
+}
+
+aside {
+  width: 250px;
+  background: #020617;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+}
+
+button {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #22c55e;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: none;
+}
+
+.project {
+  padding: 8px;
+  background: #1e293b;
+  margin-top: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+}
+
+.task {
+  background: #1e293b;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.delete {
+  background: red;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<aside>
+  <h3>Proyectos</h3>
+  <input id="newProject" placeholder="Nuevo proyecto"/>
+  <button onclick="createProject()">Crear</button>
+  <div id="projectList"></div>
+</aside>
+
+<main>
+  <h2 id="currentTitle">Selecciona proyecto</h2>
+
+  <input id="taskInput" placeholder="Nueva tarea"/>
+  <button onclick="addTask()">Agregar</button>
+
+  <div id="tasks"></div>
+</main>
+
+<script>
+const DB_NAME = "builder_pro";
+const STORE = "projects";
+let db;
+let currentProject = null;
+let projects = {};
+
+// ================= DB =================
+function initDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, 1);
+
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      db.createObjectStore(STORE, { keyPath: "name" });
+    };
+
+    req.onsuccess = e => {
+      db = e.target.result;
+      res();
+    };
+
+    req.onerror = () => rej();
+  });
+}
+
+function saveProject(project) {
+  return new Promise(res => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(project);
+    tx.oncomplete = () => res();
+  });
+}
+
+function deleteProjectDB(name) {
+  return new Promise(res => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete(name);
+    tx.oncomplete = () => res();
+  });
+}
+
+function loadProjects() {
+  return new Promise(res => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).getAll();
+
+    req.onsuccess = () => res(req.result);
+  });
+}
+
+// ================= APP =================
+async function init() {
+  await initDB();
+  const data = await loadProjects();
+
+  data.forEach(p => projects[p.name] = p);
+  render();
+}
+
+async function createProject() {
+  const name = document.getElementById("newProject").value;
+  if (!name) return;
+
+  const project = { name, tasks: [] };
+
+  projects[name] = project;
+  currentProject = name;
+
+  await saveProject(project);
+  render();
+}
+
+function selectProject(name) {
+  currentProject = name;
+  render();
+}
+
+async function deleteProject(name) {
+  delete projects[name];
+  if (currentProject === name) currentProject = null;
+
+  await deleteProjectDB(name);
+  render();
+}
+
+async function addTask() {
+  const text = document.getElementById("taskInput").value;
+  if (!text || !currentProject) return;
+
+  const project = projects[currentProject];
+  project.tasks.push({ text, done: false });
+
+  await saveProject(project);
+  render();
+}
+
+async function toggleTask(i) {
+  const project = projects[currentProject];
+  project.tasks[i].done = !project.tasks[i].done;
+
+  await saveProject(project);
+  render();
+}
+
+async function deleteTask(i) {
+  const project = projects[currentProject];
+  project.tasks.splice(i, 1);
+
+  await saveProject(project);
+  render();
+}
+
+// ================= UI =================
+function render() {
+  const list = document.getElementById("projectList");
+  list.innerHTML = "";
+
+  Object.keys(projects).forEach(name => {
+    const div = document.createElement("div");
+    div.className = "project";
+
+    div.innerHTML = `
+      <span onclick="selectProject('${name}')">${name}</span>
+      <button class="delete" onclick="deleteProject('${name}')">X</button>
+    `;
+
+    list.appendChild(div);
+  });
+
+  document.getElementById("currentTitle").innerText =
+    currentProject || "Selecciona proyecto";
+
+  const container = document.getElementById("tasks");
+  container.innerHTML = "";
+
+  if (!currentProject) return;
+
+  projects[currentProject].tasks.forEach((t, i) => {
+    const div = document.createElement("div");
+    div.className = "task";
+
+    div.innerHTML = `
+      <span>
+        <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${i})"/>
+        ${t.text}
+      </span>
+      <button class="delete" onclick="deleteTask(${i})">X</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
