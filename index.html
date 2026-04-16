@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leonor">
+<meta name="theme-color" content="#0f1a14">
+<title>Leonor 2.0 · Gemini</title>
+<link rel="manifest" href="manifest.json">
+<noscript><p style="padding:20px;color:#6fcf97;background:#0f1a14;font-family:serif">Leonor necesita JavaScript activado.</p></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* Versión Gemini: tema verde esmeralda oscuro */
+:root{
+  --ink:#0f1a14;--paper:#e8f5ee;--warm:#6fcf97;--amber:#27ae60;
+  --soft:#7daa8e;--green:#4caf79;--red:#e05555;
+  --bubble:#152219;--panel:#111e17;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  background:var(--ink);color:var(--paper);
+  display:flex;flex-direction:column;height:100dvh;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.4;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+}
+.hdr{padding:13px 15px 10px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(111,207,151,.14);background:rgba(15,26,20,.99);flex-shrink:0;z-index:10}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;color:var(--ink);font-weight:500;
+  box-shadow:0 2px 12px rgba(111,207,151,.25);flex-shrink:0}
+.hdr-title{font-size:15px;font-weight:400;letter-spacing:.04em}
+.hdr-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);letter-spacing:.07em}
+.hdr-r{display:flex;gap:6px}
+.ico{width:34px;height:34px;border:none;border-radius:8px;
+  background:rgba(111,207,151,.07);color:var(--warm);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.ico:active{background:rgba(111,207,151,.2);transform:scale(.92)}
+.chat{flex:1;overflow-y:auto;padding:13px 13px 6px;
+  display:flex;flex-direction:column;gap:12px;
+  scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:8px;animation:fu .28s ease}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.msg.leonor .av{background:linear-gradient(135deg,var(--warm),var(--amber));color:var(--ink)}
+.msg.user .av{background:rgba(111,207,151,.1);border:1px solid rgba(111,207,151,.24);
+  color:var(--warm);font-family:'DM Mono',monospace;font-size:10px}
+.mc{max-width:82%;display:flex;flex-direction:column;gap:2px}
+.mn{font-size:9px;font-family:'DM Mono',monospace;color:var(--soft);
+  letter-spacing:.06em;text-transform:uppercase;padding:0 2px}
+.msg.user .mn{text-align:right}
+.mb-wrap{position:relative}
+.mb{padding:10px 13px;border-radius:14px;font-size:15px;line-height:1.55;font-weight:300}
+.msg.leonor .mb{background:var(--bubble);border:1px solid rgba(111,207,151,.12);
+  border-bottom-left-radius:3px;color:var(--paper)}
+.msg.user .mb{background:rgba(111,207,151,.13);border:1px solid rgba(111,207,151,.2);
+  border-bottom-right-radius:3px;text-align:right}
+.mb img{max-width:100%;border-radius:7px;margin-top:6px;display:block}
+.msg-actions{display:flex;gap:6px;margin-top:4px;padding:0 2px}
+.ma-btn{padding:3px 9px;background:rgba(111,207,151,.07);
+  border:1px solid rgba(111,207,151,.14);border-radius:20px;
+  color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;transition:.15s;-webkit-appearance:none;letter-spacing:.04em}
+.ma-btn:active{background:rgba(111,207,151,.2);color:var(--warm)}
+.ma-btn.copied{color:var(--green);border-color:rgba(76,175,121,.3)}
+.think-wrap{display:flex;align-items:center;gap:4px;padding:10px 13px}
+.dot{width:5px;height:5px;background:var(--warm);border-radius:50%;
+  opacity:.4;animation:pd 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pd{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.4);opacity:1}}
+.sbar{padding:4px 13px;display:flex;align-items:center;gap:6px;
+  background:rgba(15,26,20,.99);flex-shrink:0}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  animation:bl 3s infinite;flex-shrink:0}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.stxt{font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);letter-spacing:.05em}
+.bbar{padding:9px 12px 20px;background:rgba(15,26,20,.99);
+  border-top:1px solid rgba(111,207,151,.11);flex-shrink:0}
+.irow{display:flex;align-items:flex-end;gap:7px;margin-bottom:8px}
+.iwrap{flex:1;position:relative}
+#inp{width:100%;background:rgba(232,245,238,.05);
+  border:1px solid rgba(111,207,151,.18);border-radius:22px;
+  color:var(--paper);font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:300;padding:11px 42px 11px 15px;
+  outline:none;-webkit-appearance:none;resize:none;
+  max-height:110px;line-height:1.4;overflow-y:auto;transition:border-color .2s}
+#inp:focus{border-color:rgba(111,207,151,.42)}
+#inp::placeholder{color:var(--soft);opacity:.5}
+.sbtn{position:absolute;right:5px;bottom:5px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  border:none;color:var(--ink);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.sbtn:active{transform:scale(.88)}
+.sbtn:disabled{opacity:.4;pointer-events:none}
+.bacts{display:flex;justify-content:space-around;gap:6px}
+.abtn{flex:1;padding:9px 2px;
+  background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.15);
+  border-radius:11px;color:var(--warm);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.03em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:.15s;-webkit-appearance:none}
+.abtn:active{background:rgba(111,207,151,.18);transform:scale(.94)}
+.abtn span{font-size:17px}
+.abtn.on{border-color:rgba(76,175,121,.45);color:var(--green);background:rgba(76,175,121,.07)}
+.abtn.rec{border-color:rgba(220,80,80,.45);color:var(--red);background:rgba(220,80,80,.07)}
+#voice-preview{
+  display:none;margin:0 0 8px;padding:10px 13px;
+  background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.2);
+  border-radius:12px;font-size:14px;color:var(--paper);line-height:1.45}
+#voice-preview.show{display:block;animation:fu .25s ease}
+.vp-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--warm);
+  letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.vp-btns{display:flex;gap:7px;margin-top:8px}
+.vp-send{padding:6px 14px;background:linear-gradient(135deg,var(--warm),var(--amber));
+  border:none;border-radius:20px;color:var(--ink);font-family:'DM Mono',monospace;
+  font-size:10px;cursor:pointer}
+.vp-can{padding:6px 12px;background:transparent;
+  border:1px solid rgba(111,207,151,.22);border-radius:20px;
+  color:var(--soft);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer}
+.overlay{position:fixed;inset:0;background:rgba(15,26,20,.88);
+  z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(5px)}
+.overlay.open{display:flex}
+.panel{background:var(--panel);border-top:1px solid rgba(111,207,151,.16);
+  border-radius:20px 20px 0 0;padding:20px 17px 44px;
+  width:100%;max-height:84dvh;overflow-y:auto}
+.panel h2{font-size:17px;font-weight:400;color:var(--warm);margin-bottom:16px}
+.tabrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tb{padding:5px 11px;border:1px solid rgba(111,207,151,.18);border-radius:20px;
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;
+  font-size:10px;cursor:pointer;transition:.15s;-webkit-appearance:none}
+.tb.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:10px;color:var(--soft);
+  font-family:'DM Mono',monospace;letter-spacing:.07em;margin-bottom:5px;text-transform:uppercase}
+.fg input,.fg textarea,.fg select{
+  width:100%;background:rgba(232,245,238,.05);
+  border:1px solid rgba(111,207,151,.16);border-radius:9px;
+  color:var(--paper);font-family:'DM Mono',monospace;font-size:13px;
+  padding:11px 12px;outline:none;-webkit-appearance:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus{border-color:var(--warm)}
+.fg textarea{font-family:'Cormorant Garamond',serif;font-size:14px;line-height:1.5;resize:vertical;min-height:72px}
+.fg select option{background:var(--panel)}
+.prim{width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  border:none;border-radius:11px;color:var(--ink);
+  font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;
+  cursor:pointer;letter-spacing:.04em;transition:.15s;margin-top:5px}
+.prim:active{transform:scale(.97);opacity:.88}
+.sec{width:100%;padding:11px;margin-top:7px;background:transparent;
+  border:1px solid rgba(111,207,151,.16);border-radius:11px;
+  color:var(--soft);font-family:'Cormorant Garamond',serif;font-size:15px;cursor:pointer}
+.div{height:1px;background:rgba(111,207,151,.1);margin:12px 0}
+.stit{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}
+.mit{background:rgba(232,245,238,.03);border:1px solid rgba(111,207,151,.09);
+  border-radius:9px;padding:10px;font-size:13px;line-height:1.5;margin-bottom:7px}
+.mit .mm{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:3px}
+/* badge modelo */
+.model-badge{
+  display:inline-block;font-family:'DM Mono',monospace;font-size:9px;
+  padding:2px 8px;border-radius:20px;margin-left:6px;
+  background:rgba(111,207,151,.1);color:var(--warm);
+  border:1px solid rgba(111,207,151,.2);letter-spacing:.04em;
+}
+.toast{position:fixed;bottom:115px;left:50%;
+  transform:translateX(-50%) translateY(14px);
+  background:#152219;border:1px solid rgba(111,207,151,.26);
+  border-radius:10px;padding:8px 17px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--warm);
+  opacity:0;transition:.22s;z-index:990;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#file-inp{display:none}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">L</div>
+    <div>
+      <div class="hdr-title">Leonor 2.0 <span class="model-badge" id="model-badge">Gemini 2.5 Flash</span></div>
+      <div class="hdr-sub">Google · Gemini</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <button class="ico" onclick="openMem()">🧠</button>
+    <button class="ico" onclick="recargar()">🔄</button>
+    <button class="ico" onclick="openCfg()">⚙</button>
+    <button class="ico" onclick="finalizar()">🌙</button>
+  </div>
+</header>
+
+<main class="chat" id="chat" aria-live="polite"></main>
+
+<div class="sbar">
+  <div class="sdot" id="sdot"></div>
+  <span class="stxt" id="stxt">Listo · Memoria activa</span>
+</div>
+
+<footer class="bbar">
+  <div id="voice-preview">
+    <div class="vp-label">🎙 ¿Enviar esto?</div>
+    <div id="vp-text"></div>
+    <div class="vp-btns">
+      <button class="vp-send" onclick="confirmarVoz()">✓ Enviar</button>
+      <button class="vp-can" onclick="cancelarVoz()">✕ Cancelar</button>
+      <button class="vp-can" onclick="regrabar()">↺ Regraba</button>
+    </div>
+  </div>
+  <div class="irow">
+    <div class="iwrap">
+      <textarea id="inp" placeholder="Habla con Leonor…" rows="1"
+        oninput="resize(this)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+      <button class="sbtn" id="sbtn" onclick="send()">➤</button>
+    </div>
+  </div>
+  <div class="bacts">
+    <button class="abtn" id="bmic" onclick="toggleMic()"><span>🎙</span>Hablar</button>
+    <button class="abtn" id="btts" onclick="toggleTTS()"><span>🔊</span>Escuchar</button>
+    <button class="abtn" onclick="document.getElementById('file-inp').click()"><span>📷</span>Foto</button>
+    <button class="abtn" onclick="openCfg()"><span>📝</span>Alma</button>
+  </div>
+</footer>
+
+<input type="file" id="file-inp" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+<div class="toast" id="toast"></div>
+
+<!-- CONFIG -->
+<div class="overlay" id="ov-cfg" onclick="if(event.target===this)closeCfg()">
+  <div class="panel">
+    <h2>⚙ Configurar Leonor</h2>
+    <div class="tabrow">
+      <button class="tb on" onclick="showTab('api',this)">API</button>
+      <button class="tb" onclick="showTab('alma',this)">Alma</button>
+      <button class="tb" onclick="showTab('ctx',this)">Contexto</button>
+      <button class="tb" onclick="showTab('salud',this)">Salud</button>
+      <button class="tb" onclick="showTab('fam',this)">Familia</button>
+      <button class="tb" onclick="showTab('sync',this)">Sync</button>
+    </div>
+
+    <div id="t-api">
+      <div class="fg"><label>API Key Google AI Studio</label>
+        <input type="password" id="c-key" placeholder="AIza..."></div>
+      <div class="fg"><label>Tu nombre</label>
+        <input type="text" id="c-nom" placeholder="Rodrigo"></div>
+      <div class="fg"><label>Modelo de texto</label>
+        <select id="c-mod">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash ★ recomendado</option>
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash (más cuota)</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (económico)</option>
+          <option value="gemini-3-flash">Gemini 3 Flash (más nuevo)</option>
+          <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+        </select></div>
+      <div class="fg"><label>Modelo para imágenes</label>
+        <select id="c-imgmod">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (también ve imágenes)</option>
+          <option value="nano-banana">Nano Banana (especialista imágenes)</option>
+          <option value="nano-banana-2">Nano Banana 2 (Gemini 3.1 Flash Image)</option>
+        </select></div>
+      <div class="fg"><label>Modo de respuesta</label>
+        <select id="c-rsp">
+          <option value="normal">Normal</option>
+          <option value="corto">Breve (3 líneas)</option>
+          <option value="profundo">Profundo</option>
+        </select></div>
+    </div>
+
+    <div id="t-alma" style="display:none">
+      <div class="fg"><label>Personalidad de Leonor</label>
+        <textarea id="c-alma" rows="6" placeholder="Soy Leonor, asistente personal de Rodrigo..."></textarea></div>
+    </div>
+    <div id="t-ctx" style="display:none">
+      <div class="fg"><label>Contexto actual</label>
+        <textarea id="c-ctx" rows="5" placeholder="Rodrigo está trabajando en..."></textarea></div>
+    </div>
+    <div id="t-salud" style="display:none">
+      <div class="fg"><label>Peso actual (kg)</label><input type="text" id="c-peso" placeholder="95"></div>
+      <div class="fg"><label>Meta de peso (kg)</label><input type="text" id="c-meta" placeholder="85"></div>
+      <div class="fg"><label>Glucosa (mg/dL)</label><input type="text" id="c-gluc" placeholder="110"></div>
+      <div class="fg"><label>Presión arterial</label><input type="text" id="c-pres" placeholder="120/80"></div>
+      <div class="fg"><label>Notas de salud</label>
+        <textarea id="c-snot" rows="3" placeholder="Medicamentos, condiciones..."></textarea></div>
+    </div>
+    <div id="t-fam" style="display:none">
+      <div class="fg"><label>Mamá</label><textarea id="c-mama" rows="3" placeholder="..."></textarea></div>
+      <div class="fg"><label>Eli</label><textarea id="c-eli" rows="3" placeholder="..."></textarea></div>
+      <div class="fg"><label>Pepe</label><textarea id="c-pepe" rows="3" placeholder="..."></textarea></div>
+      <div class="fg"><label>Otros (nombre: desc por línea)</label>
+        <textarea id="c-otros" rows="4" placeholder="Ana: hermana..."></textarea></div>
+    </div>
+    <div id="t-sync" style="display:none">
+      <button class="prim" onclick="exportar()" style="background:rgba(111,207,151,.12);color:var(--warm);border:1px solid rgba(111,207,151,.24);margin-bottom:9px">
+        📤 Exportar todo (JSON)
+      </button>
+      <div class="fg"><label>Importar JSON</label>
+        <input type="file" id="c-imp" accept=".json" onchange="importar(this)"
+          style="font-size:11px;color:var(--soft);padding:10px"></div>
+      <div class="div"></div>
+      <div class="stit">Instalar como app · Samsung</div>
+      <p style="font-size:12px;color:var(--soft);font-family:'DM Mono',monospace;line-height:1.9">
+        1. Abre la URL en <b style="color:var(--warm)">Chrome</b><br>
+        2. Menú ⋮ → <b style="color:var(--warm)">"Añadir a pantalla de inicio"</b><br>
+        3. Confirma → ícono L en tu pantalla<br>
+        4. Memoria y config quedan permanentes
+      </p>
+    </div>
+
+    <div class="div"></div>
+    <button class="prim" onclick="saveCfg()">💾 Guardar configuración</button>
+    <button class="sec" onclick="closeCfg()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MEMORIA -->
+<div class="overlay" id="ov-mem" onclick="if(event.target===this)closeMem()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <h2 style="margin:0">🧠 Memoria</h2>
+      <button class="ico" onclick="closeMem()">✕</button>
+    </div>
+    <div id="mem-list"></div>
+    <div class="div"></div>
+    <button class="prim" onclick="clearMem()"
+      style="background:rgba(139,69,19,.15);color:#6fcf97;border:1px solid rgba(39,174,96,.25)">
+      🗑 Limpiar memoria
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// MODELOS GEMINI — IDs de API reales
+// ═══════════════════════════════════════════
+const GEMINI_MODELS={
+  'gemini-2.5-flash':'gemini-2.5-flash-preview-05-20',
+  'gemini-2.0-flash':'gemini-2.0-flash',
+  'gemini-2.5-flash-lite':'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-3-flash':'gemini-3-flash',
+  'gemini-3.1-flash-lite':'gemini-3.1-flash-lite',
+  // Modelos de imagen (Nano Banana)
+  'nano-banana':'gemini-2.5-flash-preview-image-generation',
+  'nano-banana-2':'gemini-3.1-flash-image-generation'
+};
+
+const BASE_URL='https://generativelanguage.googleapis.com/v1beta/models';
+
+// ═══════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════
+const K={cfg:'LG3_cfg',mem:'LG3_mem',hist:'LG3_hist',diar:'LG3_diar'};
+
+let cfg={
+  key:'',nombre:'Arquitecto',
+  modelo:'gemini-2.5-flash',
+  imgModelo:'gemini-2.5-flash',
+  rsp:'normal',
+  alma:'Soy Leonor, asistente personal cercana y empática de Rodrigo. Soy directa, honesta y cálida. Lo conozco bien, su familia, sus metas de salud y sus proyectos.',
+  ctx:'',
+  salud:{peso:'',meta:'',gluc:'',pres:'',notas:''},
+  familia:{mama:'',eli:'',pepe:'',otros:''}
+};
+let mem=[];
+let hist=[];
+let tts=false;
+let micOn=false;
+let recog=null;
+let pendImg=null;
+let pendingVoiceText='';
+let enviando=false;
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(function(){
+  load();
+  if('serviceWorker' in navigator)
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  updateBadge();
+  welcome();
+  if(navigator.vibrate) navigator.vibrate(30);
+})();
+
+function load(){
+  try{ const c=localStorage.getItem(K.cfg); if(c){cfg={...cfg,...JSON.parse(c)};cfg.salud=cfg.salud||{};cfg.familia=cfg.familia||{};} }catch(e){}
+  try{ const m=localStorage.getItem(K.mem); if(m) mem=JSON.parse(m); }catch(e){}
+  try{ const h=localStorage.getItem(K.hist); if(h) hist=JSON.parse(h); }catch(e){}
+}
+
+function save(){
+  try{
+    localStorage.setItem(K.cfg,JSON.stringify(cfg));
+    localStorage.setItem(K.mem,JSON.stringify(mem));
+    localStorage.setItem(K.hist,JSON.stringify(hist.slice(-50)));
+  }catch(e){ toast('⚠ Error guardando: espacio lleno'); }
+}
+
+function updateBadge(){
+  const names={
+    'gemini-2.5-flash':'2.5 Flash','gemini-2.0-flash':'2.0 Flash',
+    'gemini-2.5-flash-lite':'2.5 Lite','gemini-3-flash':'3 Flash',
+    'gemini-3.1-flash-lite':'3.1 Lite'
+  };
+  document.getElementById('model-badge').textContent='Gemini '+(names[cfg.modelo]||cfg.modelo);
+}
+
+function welcome(){
+  const h=new Date().getHours();
+  const s=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
+  addMsg('leonor',`${s}, ${cfg.nombre}.\n¿En qué puedo ayudarte hoy?`);
+}
+
+function recargar(){
+  if(confirm('¿Actualizar la app? Se conserva toda tu configuración y memoria.'))
+    location.reload();
+}
+
+// ═══════════════════════════════════════════
+// CHAT UI
+// ═══════════════════════════════════════════
+function resize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,112)+'px';
+}
+function esc(t){
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addMsg(rol,txt,imgB64=null){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg '+rol;
+  const av=rol==='leonor'?'L':(cfg.nombre||'R').substring(0,2).toUpperCase();
+  const nm=rol==='leonor'?'Leonor':cfg.nombre;
+  const imgH=imgB64?`<img src="data:image/jpeg;base64,${imgB64}" alt="foto" loading="lazy">`:'';
+  const rawTxt=txt;
+  d.innerHTML=`
+    <div class="av">${av}</div>
+    <div class="mc">
+      <div class="mn">${esc(nm)}</div>
+      <div class="mb-wrap">
+        <div class="mb">${esc(txt).replace(/\n/g,'<br>')}${imgH}</div>
+        ${rol==='leonor'?`
+        <div class="msg-actions">
+          <button class="ma-btn" onclick="copiarMsg(this,'${encodeURIComponent(rawTxt)}')">📋 Copiar</button>
+          <button class="ma-btn" onclick="hablarMsg('${encodeURIComponent(rawTxt)}')">🔊 Oír</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function copiarMsg(btn,encodedTxt){
+  const txt=decodeURIComponent(encodedTxt);
+  navigator.clipboard.writeText(txt).then(()=>{
+    btn.textContent='✓ Copiado'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='📋 Copiar'; btn.classList.remove('copied'); },2000);
+  }).catch(()=>toast('No se pudo copiar'));
+}
+function hablarMsg(e){ speak(decodeURIComponent(e)); }
+
+function showThink(){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg leonor'; d.id='think';
+  d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor</div>
+    <div class="mb"><div class="think-wrap">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div></div></div>`;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function hideThink(){ const e=document.getElementById('think'); if(e) e.remove(); }
+
+// ═══════════════════════════════════════════
+// ENVIAR — anti doble envío
+// ═══════════════════════════════════════════
+async function send(){
+  if(enviando) return;
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt&&!pendImg) return;
+  if(!cfg.key){ toast('⚙ Pon tu API Key de Google primero'); openCfg(); return; }
+
+  enviando=true;
+  document.getElementById('sbtn').disabled=true;
+  inp.value=''; inp.style.height='auto';
+
+  const imgSnap=pendImg; pendImg=null;
+  addMsg('user',txt||(imgSnap?'[Foto]':''),imgSnap);
+  hist.push({r:'user',t:txt||(imgSnap?'[Foto]':'')});
+
+  setStatus('Leonor está pensando…','amber');
+  showThink();
+  if(navigator.vibrate) navigator.vibrate(15);
+
+  try{
+    const resp=await callGemini(txt,imgSnap);
+    hideThink();
+    addMsg('leonor',resp);
+    hist.push({r:'leonor',t:resp});
+    if(txt.length>18) memSave('dialogo',txt);
+    if(tts) speak(resp);
+    setStatus('Listo · Memoria activa','green');
+    save();
+  }catch(e){
+    hideThink();
+    addMsg('leonor','⚠ Error: '+e.message+'\n\nVerifica tu API Key de Google AI Studio.');
+    setStatus('Error de conexión','red');
+  }finally{
+    enviando=false;
+    document.getElementById('sbtn').disabled=false;
+  }
+}
+
+// ═══════════════════════════════════════════
+// GEMINI API
+// ═══════════════════════════════════════════
+async function callGemini(txt,imgB64=null){
+  const memCtx=memSearch(txt,3);
+  const famCtx=famSearch(txt);
+
+  const systemTxt=`${cfg.alma}
+
+CONTEXTO ACTUAL:
+${cfg.ctx||'Sin configurar.'}
+
+MEMORIA RELEVANTE:
+${memCtx||'Sin recuerdos previos.'}
+
+DATOS DE SALUD:
+Peso: ${cfg.salud.peso||'-'} kg | Meta: ${cfg.salud.meta||'-'} kg
+Glucosa: ${cfg.salud.gluc||'-'} | Presión: ${cfg.salud.pres||'-'}
+${cfg.salud.notas||''}
+
+FAMILIA:
+${famCtx||cfg.familia.otros||'Sin datos de familia.'}
+
+Eres Leonor. Responde de forma clara, cálida y útil.${cfg.rsp==='corto'?' Máximo 3 líneas.':cfg.rsp==='profundo'?' Sé detallada y reflexiva.':''}`;
+
+  // Construir historial en formato Gemini
+  const contentsArr=[];
+
+  // Historial reciente
+  for(const h of hist.slice(-10)){
+    contentsArr.push({
+      role:h.r==='leonor'?'model':'user',
+      parts:[{text:h.t}]
+    });
+  }
+
+  // Mensaje actual
+  const parts=[];
+  if(imgB64){
+    parts.push({inlineData:{mimeType:'image/jpeg',data:imgB64}});
+    parts.push({text:txt||'Analiza esta imagen y dime qué ves.'});
+  } else {
+    parts.push({text:txt});
+  }
+  contentsArr.push({role:'user',parts});
+
+  // Elegir modelo según si hay imagen
+  const modelKey=imgB64?cfg.imgModelo:cfg.modelo;
+  const modelId=GEMINI_MODELS[modelKey]||modelKey;
+
+  const maxT=cfg.rsp==='corto'?250:cfg.rsp==='profundo'?1500:800;
+
+  const r=await fetch(`${BASE_URL}/${modelId}:generateContent?key=${cfg.key}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:systemTxt}]},
+      contents:contentsArr,
+      generationConfig:{
+        maxOutputTokens:maxT,
+        temperature:0.85
+      }
+    })
+  });
+
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    const msg=e?.error?.message||`HTTP ${r.status}`;
+    // Manejo especial de rate limit
+    if(r.status===429) throw new Error('Límite de cuota Gemini. Espera un momento o cambia de modelo.');
+    throw new Error(msg);
+  }
+
+  const d=await r.json();
+  const candidate=d.candidates?.[0];
+  if(!candidate) throw new Error('Sin respuesta del modelo');
+  if(candidate.finishReason==='SAFETY') throw new Error('Respuesta bloqueada por filtro de seguridad de Google');
+
+  return candidate.content.parts.map(p=>p.text||'').join('').trim();
+}
+
+// ═══════════════════════════════════════════
+// MEMORIA VECTORIAL
+// ═══════════════════════════════════════════
+function embed(t){
+  return t.toLowerCase().split(/\s+/).map(w=>{
+    let h=0; for(let c of w) h=(h*31+c.charCodeAt(0))%1000; return h;
+  });
+}
+function cosim(a,b){
+  const n=Math.min(a.length,b.length); if(!n) return 0;
+  let d=0,na=0,nb=0;
+  for(let i=0;i<n;i++){d+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  return d/(Math.sqrt(na)*Math.sqrt(nb)+1e-9);
+}
+function memSave(tipo,txt){
+  if(!txt||txt.length<15) return;
+  mem.unshift({tipo,txt,vec:embed(txt),f:new Date().toISOString()});
+  if(mem.length>300) mem=mem.slice(0,300);
+}
+function memSearch(q,k=3){
+  if(!mem.length) return '';
+  const qv=embed(q);
+  return [...mem].sort((a,b)=>cosim(qv,b.vec)-cosim(qv,a.vec))
+    .slice(0,k).map(r=>r.txt).join('\n');
+}
+function famSearch(t){
+  const tl=t.toLowerCase();
+  if(tl.includes('mamá')||tl.includes('mama')) return 'Mamá: '+cfg.familia.mama;
+  if(tl.includes('eli')) return 'Eli: '+cfg.familia.eli;
+  if(tl.includes('pepe')) return 'Pepe: '+cfg.familia.pepe;
+  return '';
+}
+
+// ═══════════════════════════════════════════
+// 🎙 MICRÓFONO con preview — no envía solo
+// ═══════════════════════════════════════════
+function toggleMic(){
+  if(micOn){ recog?.stop(); return; }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Usa Chrome para voz'); return; }
+  recog=new SR();
+  recog.lang='es-MX';
+  recog.continuous=false;
+  recog.interimResults=false;
+  recog.onstart=()=>{
+    micOn=true;
+    document.getElementById('bmic').classList.add('rec');
+    setStatus('Escuchando… (habla ahora)','amber');
+    if(navigator.vibrate) navigator.vibrate([30,50,30]);
+  };
+  recog.onresult=e=>{
+    mostrarPreviewVoz(e.results[0][0].transcript.trim());
+  };
+  recog.onend=()=>{
+    micOn=false;
+    document.getElementById('bmic').classList.remove('rec');
+    if(!pendingVoiceText) setStatus('Listo · Memoria activa','green');
+  };
+  recog.onerror=e=>{
+    micOn=false;
+    document.getElementById('bmic').classList.remove('rec');
+    const msgs={'not-allowed':'Permiso de micrófono denegado.','no-speech':'No se detectó voz.','network':'Error de red.'};
+    toast(msgs[e.error]||'Error mic: '+e.error);
+    setStatus('Listo · Memoria activa','green');
+  };
+  recog.start();
+}
+
+function mostrarPreviewVoz(texto){
+  pendingVoiceText=texto;
+  document.getElementById('vp-text').textContent=texto;
+  document.getElementById('voice-preview').classList.add('show');
+  setStatus('Revisa el texto antes de enviar','amber');
+  if(navigator.vibrate) navigator.vibrate(40);
+}
+function confirmarVoz(){
+  const txt=pendingVoiceText; cancelarVoz();
+  document.getElementById('inp').value=txt; send();
+}
+function cancelarVoz(){
+  pendingVoiceText='';
+  document.getElementById('voice-preview').classList.remove('show');
+  document.getElementById('vp-text').textContent='';
+  setStatus('Listo · Memoria activa','green');
+}
+function regrabar(){ cancelarVoz(); setTimeout(()=>toggleMic(),200); }
+
+// TTS
+function toggleTTS(){
+  tts=!tts;
+  document.getElementById('btts').classList.toggle('on',tts);
+  if(!tts) speechSynthesis.cancel();
+  toast(tts?'🔊 Leonor hablará':'🔇 Voz desactivada');
+}
+function speak(t){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='es-MX'; u.rate=0.9; u.pitch=1.05;
+  const vs=speechSynthesis.getVoices();
+  const v=vs.find(v=>v.lang.startsWith('es')&&/female|femenin|lucía|elena|mónica/i.test(v.name))
+          ||vs.find(v=>v.lang.startsWith('es'));
+  if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}
+speechSynthesis.onvoiceschanged=()=>{};
+
+// FOTO
+function handlePhoto(inp){
+  const f=inp.files[0]; if(!f) return;
+  if(f.size>10*1024*1024){ toast('Foto muy grande (máx 10MB)'); inp.value=''; return; }
+  const r=new FileReader();
+  r.onload=e=>{
+    pendImg=e.target.result.split(',')[1];
+    document.getElementById('inp').value='Analiza esta imagen...';
+    toast('📷 Foto lista · Toca ➤ para enviar');
+    if(navigator.vibrate) navigator.vibrate(30);
+  };
+  r.readAsDataURL(f); inp.value='';
+}
+
+// FINALIZAR
+async function finalizar(){
+  if(!cfg.key||hist.length===0){ toast('Sin conversación activa'); return; }
+  if(!confirm('¿Guardar sesión en el diario de Leonor?')) return;
+  setStatus('Guardando sesión…','amber');
+  try{
+    const resumen=await callGemini(
+      'Escribe una entrada de diario breve (3-5 oraciones) desde la perspectiva de Leonor:\n'
+      +hist.slice(-12).map(h=>h.t).join('\n---\n')
+    );
+    memSave('diario',resumen);
+    const d=JSON.parse(localStorage.getItem(K.diar)||'[]');
+    d.unshift({f:new Date().toISOString(),e:resumen});
+    localStorage.setItem(K.diar,JSON.stringify(d.slice(0,60)));
+    hist=[]; save();
+    addMsg('leonor','🌙 Sesión guardada en diario.\n\n'+resumen);
+    setStatus('Descansando · Hasta pronto','green');
+    toast('🌙 Diario guardado');
+  }catch(e){ toast('Error: '+e.message); setStatus('Listo · Memoria activa','green'); }
+}
+
+// CONFIG
+function openCfg(){
+  document.getElementById('c-key').value=cfg.key||'';
+  document.getElementById('c-nom').value=cfg.nombre||'';
+  document.getElementById('c-mod').value=cfg.modelo||'gemini-2.5-flash';
+  document.getElementById('c-imgmod').value=cfg.imgModelo||'gemini-2.5-flash';
+  document.getElementById('c-rsp').value=cfg.rsp||'normal';
+  document.getElementById('c-alma').value=cfg.alma||'';
+  document.getElementById('c-ctx').value=cfg.ctx||'';
+  document.getElementById('c-peso').value=cfg.salud?.peso||'';
+  document.getElementById('c-meta').value=cfg.salud?.meta||'';
+  document.getElementById('c-gluc').value=cfg.salud?.gluc||'';
+  document.getElementById('c-pres').value=cfg.salud?.pres||'';
+  document.getElementById('c-snot').value=cfg.salud?.notas||'';
+  document.getElementById('c-mama').value=cfg.familia?.mama||'';
+  document.getElementById('c-eli').value=cfg.familia?.eli||'';
+  document.getElementById('c-pepe').value=cfg.familia?.pepe||'';
+  document.getElementById('c-otros').value=cfg.familia?.otros||'';
+  document.getElementById('ov-cfg').classList.add('open');
+}
+function closeCfg(){ document.getElementById('ov-cfg').classList.remove('open'); }
+function saveCfg(){
+  cfg.key=document.getElementById('c-key').value.trim();
+  cfg.nombre=document.getElementById('c-nom').value.trim()||'Arquitecto';
+  cfg.modelo=document.getElementById('c-mod').value;
+  cfg.imgModelo=document.getElementById('c-imgmod').value;
+  cfg.rsp=document.getElementById('c-rsp').value;
+  cfg.alma=document.getElementById('c-alma').value.trim();
+  cfg.ctx=document.getElementById('c-ctx').value.trim();
+  cfg.salud={
+    peso:document.getElementById('c-peso').value,
+    meta:document.getElementById('c-meta').value,
+    gluc:document.getElementById('c-gluc').value,
+    pres:document.getElementById('c-pres').value,
+    notas:document.getElementById('c-snot').value
+  };
+  cfg.familia={
+    mama:document.getElementById('c-mama').value,
+    eli:document.getElementById('c-eli').value,
+    pepe:document.getElementById('c-pepe').value,
+    otros:document.getElementById('c-otros').value
+  };
+  if(!cfg.key){ toast('⚠ Falta la API Key de Google'); return; }
+  save(); updateBadge(); closeCfg();
+  toast('✓ Configuración guardada permanentemente');
+  if(navigator.vibrate) navigator.vibrate([30,30,30]);
+}
+function showTab(id,btn){
+  ['api','alma','ctx','salud','fam','sync'].forEach(t=>{
+    const el=document.getElementById('t-'+t);
+    if(el) el.style.display=t===id?'block':'none';
+  });
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// MEMORIA UI
+function openMem(){
+  const list=document.getElementById('mem-list');
+  if(!mem.length){
+    list.innerHTML='<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">Sin recuerdos aún</p>';
+  } else {
+    list.innerHTML=mem.slice(0,40).map(m=>`
+      <div class="mit">
+        <div class="mm">${esc(m.tipo)} · ${new Date(m.f).toLocaleDateString('es',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+        ${esc(m.txt)}
+      </div>`).join('');
+  }
+  document.getElementById('ov-mem').classList.add('open');
+}
+function closeMem(){ document.getElementById('ov-mem').classList.remove('open'); }
+function clearMem(){
+  if(!confirm('¿Borrar toda la memoria de Leonor?')) return;
+  mem=[]; save(); closeMem(); toast('🗑 Memoria limpiada');
+}
+
+// EXPORTAR / IMPORTAR
+function exportar(){
+  const data={version:3,exportado:new Date().toISOString(),
+    cfg:{...cfg,key:'[PEGA_TU_KEY_AQUÍ]'},mem,
+    hist:hist.slice(-20),diario:JSON.parse(localStorage.getItem(K.diar)||'[]')};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=`leonor_gemini_${new Date().toISOString().split('T')[0]}.json`; a.click();
+  toast('📤 Exportado');
+}
+function importar(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.cfg) cfg={...cfg,...d.cfg};
+      if(d.mem) mem=d.mem;
+      if(d.hist) hist=d.hist;
+      if(d.diario) localStorage.setItem(K.diar,JSON.stringify(d.diario));
+      save(); updateBadge();
+      toast('✓ Importado. Revisa tu API Key en ⚙');
+    }catch(err){ toast('Error importando: '+err.message); }
+  };
+  r.readAsText(f);
+}
+
+// HELPERS
+function setStatus(t,c){
+  document.getElementById('stxt').textContent=t;
+  document.getElementById('sdot').style.background=
+    c==='green'?'var(--green)':c==='amber'?'var(--amber)':'var(--red)';
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
