@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leonor">
+<meta name="theme-color" content="#1a1410">
+<title>Leonor 2.0</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1410;--paper:#f5f0e8;--warm:#c8a96e;--amber:#d4863a;
+  --rust:#8b4513;--muted:#7a6e60;--soft:#b5aba0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+body{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  background:var(--ink);color:var(--paper);
+  height:100dvh;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+/* grain */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity:.5;
+}
+
+/* HEADER */
+.hdr{
+  padding:14px 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(200,169,110,.18);
+  background:rgba(26,20,16,.98);flex-shrink:0;position:relative;z-index:10;
+}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;color:var(--ink);font-weight:500;
+  box-shadow:0 2px 14px rgba(200,169,110,.3);flex-shrink:0;
+}
+.hdr-info h1{font-size:15px;font-weight:400;letter-spacing:.05em}
+.freq{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);letter-spacing:.08em}
+.hdr-r{display:flex;gap:7px}
+.ico-btn{
+  width:34px;height:34px;border:1px solid rgba(200,169,110,.22);border-radius:8px;
+  background:rgba(200,169,110,.07);color:var(--warm);font-size:15px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;-webkit-appearance:none;
+}
+.ico-btn:active{background:rgba(200,169,110,.2);transform:scale(.93)}
+
+/* CHAT */
+.chat{
+  flex:1;overflow-y:auto;padding:14px 14px 6px;
+  display:flex;flex-direction:column;gap:13px;
+  scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+}
+.chat::-webkit-scrollbar{display:none}
+
+.msg{display:flex;gap:9px;animation:fu .3s ease}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+
+.av{
+  width:31px;height:31px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;
+}
+.msg.leonor .av{background:linear-gradient(135deg,var(--warm),var(--amber));color:var(--ink)}
+.msg.user .av{
+  background:rgba(200,169,110,.12);border:1px solid rgba(200,169,110,.28);
+  color:var(--warm);font-family:'DM Mono',monospace;font-size:10px;
+}
+.mc{max-width:80%;display:flex;flex-direction:column;gap:3px}
+.mn{font-size:9px;font-family:'DM Mono',monospace;color:var(--soft);letter-spacing:.06em;text-transform:uppercase;padding:0 2px}
+.msg.user .mn{text-align:right}
+.mb{padding:10px 14px;border-radius:15px;font-size:15px;line-height:1.55;font-weight:300}
+.msg.leonor .mb{
+  background:#272018;border:1px solid rgba(200,169,110,.14);
+  border-bottom-left-radius:4px;color:var(--paper);
+}
+.msg.user .mb{
+  background:linear-gradient(135deg,rgba(200,169,110,.17),rgba(212,134,58,.11));
+  border:1px solid rgba(200,169,110,.24);border-bottom-right-radius:4px;
+  text-align:right;
+}
+.mb img{max-width:100%;border-radius:8px;margin-top:6px;display:block}
+
+/* thinking */
+.think{display:flex;align-items:center;gap:4px;padding:10px 14px}
+.dot{width:6px;height:6px;background:var(--warm);border-radius:50%;opacity:.5;animation:p 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes p{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.35);opacity:1}}
+
+/* STATUS */
+.sbar{
+  padding:4px 14px;display:flex;align-items:center;gap:6px;
+  background:rgba(26,20,16,.98);flex-shrink:0;
+}
+.sdot{width:6px;height:6px;border-radius:50%;background:#4caf79;animation:bl 3s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.35}}
+.stxt{font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);letter-spacing:.06em}
+
+/* BOTTOM BAR */
+.bbar{
+  padding:9px 12px 22px;
+  background:rgba(26,20,16,.98);border-top:1px solid rgba(200,169,110,.13);
+  flex-shrink:0;
+}
+.irow{display:flex;align-items:flex-end;gap:8px;margin-bottom:8px}
+.iwrap{flex:1;position:relative}
+#inp{
+  width:100%;background:rgba(245,240,232,.06);
+  border:1px solid rgba(200,169,110,.2);border-radius:22px;
+  color:var(--paper);font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:300;
+  padding:11px 42px 11px 16px;outline:none;
+  transition:border-color .2s;-webkit-appearance:none;
+  resize:none;max-height:110px;line-height:1.4;
+  overflow-y:auto;
+}
+#inp:focus{border-color:rgba(200,169,110,.48)}
+#inp::placeholder{color:var(--soft);opacity:.55}
+.sbtn{
+  position:absolute;right:6px;bottom:6px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  border:none;color:var(--ink);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.sbtn:active{transform:scale(.9)}
+
+.bacts{display:flex;justify-content:space-around;gap:7px}
+.abtn{
+  flex:1;padding:9px 2px;
+  background:rgba(200,169,110,.07);border:1px solid rgba(200,169,110,.17);
+  border-radius:11px;color:var(--warm);
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.04em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:all .15s;-webkit-appearance:none;
+}
+.abtn:active{background:rgba(200,169,110,.18);transform:scale(.95)}
+.abtn span{font-size:17px}
+.abtn.on{border-color:rgba(76,175,121,.5);color:#4caf79;background:rgba(76,175,121,.08)}
+.abtn.rec{border-color:rgba(220,80,80,.5);color:#e55;background:rgba(220,80,80,.08)}
+
+/* PANEL / MODAL base */
+.overlay{
+  position:fixed;inset:0;background:rgba(26,20,16,.88);
+  z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(5px);
+}
+.overlay.open{display:flex}
+.panel{
+  background:#1e1a12;border-top:1px solid rgba(200,169,110,.2);
+  border-radius:20px 20px 0 0;padding:22px 18px 44px;
+  width:100%;max-height:82dvh;overflow-y:auto;
+}
+.panel h2{font-size:17px;font-weight:400;color:var(--warm);margin-bottom:18px;letter-spacing:.04em}
+.tabrow{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.tb{
+  padding:5px 11px;border:1px solid rgba(200,169,110,.22);border-radius:20px;
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;
+  font-size:10px;cursor:pointer;transition:all .15s;-webkit-appearance:none;
+}
+.tb.on{background:rgba(200,169,110,.14);border-color:var(--warm);color:var(--warm)}
+.fg{margin-bottom:14px}
+.fg label{
+  display:block;font-size:10px;color:var(--soft);
+  font-family:'DM Mono',monospace;letter-spacing:.08em;
+  margin-bottom:5px;text-transform:uppercase;
+}
+.fg input,.fg textarea,.fg select{
+  width:100%;background:rgba(245,240,232,.06);
+  border:1px solid rgba(200,169,110,.2);border-radius:9px;
+  color:var(--paper);font-family:'DM Mono',monospace;font-size:13px;
+  padding:11px 13px;outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.fg input:focus,.fg textarea:focus{border-color:var(--warm)}
+.fg textarea{font-family:'Cormorant Garamond',serif;font-size:14px;line-height:1.5;resize:vertical;min-height:75px}
+.fg select option{background:#1e1a12}
+.prim{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--warm),var(--amber));
+  border:none;border-radius:11px;color:var(--ink);
+  font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;
+  cursor:pointer;letter-spacing:.04em;transition:all .15s;margin-top:6px;
+}
+.prim:active{transform:scale(.98);opacity:.9}
+.sec{
+  width:100%;padding:11px;margin-top:7px;
+  background:transparent;border:1px solid rgba(200,169,110,.2);
+  border-radius:11px;color:var(--soft);
+  font-family:'Cormorant Garamond',serif;font-size:15px;cursor:pointer;
+}
+.div{height:1px;background:rgba(200,169,110,.12);margin:12px 0}
+.stit{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+
+/* Memoria items */
+.mit{
+  background:rgba(245,240,232,.04);border:1px solid rgba(200,169,110,.1);
+  border-radius:9px;padding:11px;font-size:13px;color:var(--paper);
+  line-height:1.5;margin-bottom:8px;
+}
+.mit .mm{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:4px}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:110px;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:#272018;border:1px solid rgba(200,169,110,.3);
+  border-radius:10px;padding:9px 18px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--warm);
+  opacity:0;transition:all .25s;z-index:990;pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* install banner */
+.install-banner{
+  position:fixed;top:70px;left:12px;right:12px;
+  background:linear-gradient(135deg,rgba(200,169,110,.15),rgba(212,134,58,.1));
+  border:1px solid rgba(200,169,110,.3);border-radius:12px;
+  padding:12px 14px;z-index:100;display:none;
+  font-size:13px;line-height:1.5;animation:fu .3s ease;
+}
+.install-banner.show{display:block}
+.install-banner b{color:var(--warm)}
+.install-banner .xbtn{
+  float:right;background:none;border:none;color:var(--soft);
+  font-size:16px;cursor:pointer;margin:-2px -2px 0 8px;
+}
+#file-inp{display:none}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="logo">L</div>
+    <div class="hdr-info">
+      <h1>Leonor 2.0</h1>
+      <div class="freq">Frecuencia Alfa · 0.2</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <button class="ico-btn" onclick="openMem()" title="Memoria">🧠</button>
+    <button class="ico-btn" onclick="openCfg()" title="Configurar">⚙</button>
+    <button class="ico-btn" onclick="finalizar()" title="Finalizar sesión">🌙</button>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="chat" id="chat"></div>
+
+<!-- STATUS -->
+<div class="sbar">
+  <div class="sdot" id="sdot"></div>
+  <span class="stxt" id="stxt">Listo · Memoria activa</span>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bbar">
+  <div class="irow">
+    <div class="iwrap">
+      <textarea id="inp" placeholder="Habla con Leonor…" rows="1"
+        oninput="resize(this)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+      <button class="sbtn" onclick="send()">➤</button>
+    </div>
+  </div>
+  <div class="bacts">
+    <button class="abtn" id="bmic" onclick="toggleMic()"><span>🎙</span>Hablar</button>
+    <button class="abtn" id="btts" onclick="toggleTTS()"><span>🔊</span>Escuchar</button>
+    <button class="abtn" onclick="document.getElementById('file-inp').click()"><span>📷</span>Foto</button>
+    <button class="abtn" onclick="openCfg()"><span>📝</span>Alma</button>
+  </div>
+</div>
+
+<input type="file" id="file-inp" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="install-banner">
+  <button class="xbtn" onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
+  <b>Instalar Leonor como app:</b><br>
+  Chrome/Samsung: Menú (⋮) → <b>"Añadir a pantalla de inicio"</b>
+</div>
+
+<!-- PANEL CONFIG -->
+<div class="overlay" id="ov-cfg" onclick="if(event.target===this)closeCfg()">
+  <div class="panel">
+    <h2>⚙ Configurar Leonor</h2>
+    <div class="tabrow">
+      <button class="tb on" onclick="showTab('api',this)">API</button>
+      <button class="tb" onclick="showTab('alma',this)">Alma</button>
+      <button class="tb" onclick="showTab('ctx',this)">Contexto</button>
+      <button class="tb" onclick="showTab('salud',this)">Salud</button>
+      <button class="tb" onclick="showTab('fam',this)">Familia</button>
+      <button class="tb" onclick="showTab('sync',this)">Sync</button>
+    </div>
+
+    <div id="t-api">
+      <div class="fg"><label>API Key Anthropic (Claude)</label>
+        <input type="password" id="c-key" placeholder="sk-ant-api03-..."></div>
+      <div class="fg"><label>Tu nombre</label>
+        <input type="text" id="c-nom" placeholder="Rodrigo"></div>
+      <div class="fg"><label>Modelo</label>
+        <select id="c-mod">
+          <option value="claude-opus-4-5">Claude Opus 4.5 (mejor)</option>
+          <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (rápido)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku (más barato)</option>
+        </select></div>
+      <div class="fg"><label>Modo de respuesta</label>
+        <select id="c-rsp">
+          <option value="normal">Normal</option>
+          <option value="corto">Breve (3 líneas)</option>
+          <option value="profundo">Profundo</option>
+        </select></div>
+    </div>
+
+    <div id="t-alma" style="display:none">
+      <div class="fg"><label>Personalidad y valores de Leonor</label>
+        <textarea id="c-alma" rows="6" placeholder="Soy Leonor, asistente personal de Rodrigo. Soy empática, directa y honesta. Conozco bien su vida, familia y metas..."></textarea></div>
+    </div>
+
+    <div id="t-ctx" style="display:none">
+      <div class="fg"><label>Contexto actual (proyectos, situación, prioridades)</label>
+        <textarea id="c-ctx" rows="5" placeholder="Rodrigo está trabajando en..."></textarea></div>
+    </div>
+
+    <div id="t-salud" style="display:none">
+      <div class="fg"><label>Peso (kg)</label><input type="text" id="c-peso" placeholder="95"></div>
+      <div class="fg"><label>Glucosa (mg/dL)</label><input type="text" id="c-gluc" placeholder="110"></div>
+      <div class="fg"><label>Presión arterial</label><input type="text" id="c-pres" placeholder="120/80"></div>
+      <div class="fg"><label>Meta de peso</label><input type="text" id="c-meta" placeholder="85"></div>
+      <div class="fg"><label>Notas de salud</label>
+        <textarea id="c-snot" rows="3" placeholder="Medicamentos, condiciones, restricciones..."></textarea></div>
+    </div>
+
+    <div id="t-fam" style="display:none">
+      <div class="fg"><label>Mamá</label>
+        <textarea id="c-mama" rows="3" placeholder="Nombre, personalidad, situación..."></textarea></div>
+      <div class="fg"><label>Eli</label>
+        <textarea id="c-eli" rows="3" placeholder="..."></textarea></div>
+      <div class="fg"><label>Pepe</label>
+        <textarea id="c-pepe" rows="3" placeholder="..."></textarea></div>
+      <div class="fg"><label>Otros (una persona por línea: nombre: descripción)</label>
+        <textarea id="c-otros" rows="4" placeholder="Ana: mi hermana, vive en...&#10;Carlos: amigo cercano..."></textarea></div>
+    </div>
+
+    <div id="t-sync" style="display:none">
+      <p style="font-size:13px;color:var(--soft);line-height:1.6;margin-bottom:14px">
+        Los datos viven en tu navegador. Exporta para pasar a otro dispositivo o hacer backup.
+      </p>
+      <button class="prim" onclick="exportar()" style="background:rgba(200,169,110,.14);color:var(--warm);border:1px solid rgba(200,169,110,.28);margin-bottom:8px">
+        📤 Exportar todo (JSON)
+      </button>
+      <div class="fg"><label>Importar desde JSON</label>
+        <input type="file" id="c-imp" accept=".json" onchange="importar(this)"
+          style="font-family:'DM Mono',monospace;font-size:11px;color:var(--soft);padding:10px;border-radius:9px;border:1px solid rgba(200,169,110,.2);background:rgba(245,240,232,.05)"></div>
+      <div class="div"></div>
+      <div class="stit">Pasos para instalar como app en Samsung</div>
+      <p style="font-size:12px;color:var(--soft);line-height:1.8;font-family:'DM Mono',monospace">
+        1. Abre esta página en <b style="color:var(--warm)">Chrome</b> o Samsung Internet<br>
+        2. Toca el menú ⋮ (tres puntos arriba a la derecha)<br>
+        3. Toca <b style="color:var(--warm)">"Añadir a pantalla de inicio"</b><br>
+        4. Confirma → icono L aparece en tu pantalla<br>
+        5. ¡Listo! Memoria y config se guardan permanentemente
+      </p>
+    </div>
+
+    <div class="div"></div>
+    <button class="prim" onclick="saveCfg()">💾 Guardar configuración</button>
+    <button class="sec" onclick="closeCfg()">Cancelar</button>
+  </div>
+</div>
+
+<!-- PANEL MEMORIA -->
+<div class="overlay" id="ov-mem" onclick="if(event.target===this)closeMem()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="margin:0">🧠 Memoria</h2>
+      <button class="ico-btn" onclick="closeMem()">✕</button>
+    </div>
+    <div id="mem-list"></div>
+    <div class="div"></div>
+    <button class="prim" onclick="clearMem()" style="background:rgba(139,69,19,.2);color:var(--amber);border:1px solid rgba(139,69,19,.3)">
+      🗑 Limpiar toda la memoria
+    </button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ESTADO
+// ============================================================
+const DB_KEY = {
+  cfg: 'L2_cfg',
+  mem: 'L2_mem',
+  diar: 'L2_diario',
+  hist: 'L2_hist'
+};
+
+let cfg = {
+  key:'', nombre:'Arquitecto',
+  modelo:'claude-opus-4-5', rsp:'normal',
+  alma:'Soy Leonor, asistente personal cercana y empática de Rodrigo. Soy directa, honesta y cálida. Lo conozco bien.',
+  ctx:'', salud:{peso:'',gluc:'',pres:'',meta:'',notas:''},
+  familia:{mama:'',eli:'',pepe:'',otros:''}
+};
+
+let mem = [];   // [{tipo,texto,vec,fecha}]
+let hist = [];  // [{r:'user'|'leonor', t:string}]
+let tts = false;
+let recog = null;
+let micOn = false;
+let pendImg = null;
+
+// ============================================================
+// INIT
+// ============================================================
+(function(){
+  load();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+  // Mostrar banner install si no es standalone
+  if(!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone){
+    setTimeout(()=>document.getElementById('install-banner').classList.add('show'), 3000);
+  }
+  welcome();
+})();
+
+function load(){
+  try{
+    const c=localStorage.getItem(DB_KEY.cfg);
+    if(c) cfg={...cfg,...JSON.parse(c)};
+    // Asegurar subobjetos
+    cfg.salud = cfg.salud||{};
+    cfg.familia = cfg.familia||{};
+  }catch(e){}
+  try{ const m=localStorage.getItem(DB_KEY.mem); if(m) mem=JSON.parse(m); }catch(e){}
+  try{ const h=localStorage.getItem(DB_KEY.hist); if(h) hist=JSON.parse(h); }catch(e){}
+}
+
+function save(){
+  try{
+    localStorage.setItem(DB_KEY.cfg, JSON.stringify(cfg));
+    localStorage.setItem(DB_KEY.mem, JSON.stringify(mem));
+    localStorage.setItem(DB_KEY.hist, JSON.stringify(hist.slice(-40)));
+  }catch(e){ toast('⚠ Error guardando datos: '+e.message); }
+}
+
+function welcome(){
+  const h=new Date().getHours();
+  const s=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
+  addMsg('leonor',`${s}, ${cfg.nombre}.\n¿En qué puedo ayudarte hoy?`);
+}
+
+// ============================================================
+// CHAT UI
+// ============================================================
+function resize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,112)+'px';
+}
+
+function addMsg(rol, txt, imgB64=null){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg '+rol;
+  const av=rol==='leonor'?'L':(cfg.nombre||'R').substring(0,2).toUpperCase();
+  const nm=rol==='leonor'?'Leonor':cfg.nombre;
+  const imgH=imgB64?`<img src="data:image/jpeg;base64,${imgB64}" alt="foto">` :'';
+  d.innerHTML=`
+    <div class="av">${av}</div>
+    <div class="mc">
+      <div class="mn">${nm}</div>
+      <div class="mb">${esc(txt).replace(/\n/g,'<br>')}${imgH}</div>
+    </div>`;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+function showThink(){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg leonor'; d.id='think';
+  d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor</div>
+    <div class="mb"><div class="think"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function hideThink(){ const e=document.getElementById('think'); if(e) e.remove(); }
+
+// ============================================================
+// ENVIAR
+// ============================================================
+async function send(){
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt && !pendImg) return;
+
+  if(!cfg.key){ toast('⚙ Necesitas tu API Key de Anthropic'); openCfg(); return; }
+
+  inp.value=''; inp.style.height='auto';
+
+  const imgSnap=pendImg; pendImg=null;
+  addMsg('user', txt||(imgSnap?'[Foto]':''), imgSnap);
+  hist.push({r:'user',t:txt||(imgSnap?'[Foto analizada]':'')});
+
+  setStatus('Leonor está pensando…','amber');
+  showThink();
+
+  try{
+    const resp=await callClaude(txt, imgSnap);
+    hideThink();
+    addMsg('leonor', resp);
+    hist.push({r:'leonor',t:resp});
+    if(txt.length>18) memSave('dialogo', txt);
+    if(tts) speak(resp);
+    setStatus('Listo · Memoria activa','green');
+    save();
+  }catch(e){
+    hideThink();
+    addMsg('leonor','Error: '+e.message);
+    setStatus('Error','red');
+  }
+}
+
+// ============================================================
+// CLAUDE API
+// ============================================================
+async function callClaude(txt, imgB64=null){
+  const memCtx=memSearch(txt,3);
+  const famCtx=famSearch(txt);
+
+  const sys=`${cfg.alma}
+
+CONTEXTO:
+${cfg.ctx||'Sin configurar.'}
+
+MEMORIA RELEVANTE:
+${memCtx||'Sin recuerdos previos.'}
+
+SALUD:
+Peso actual: ${cfg.salud.peso||'-'} kg | Meta: ${cfg.salud.meta||'-'} kg
+Glucosa: ${cfg.salud.gluc||'-'} | Presión: ${cfg.salud.pres||'-'}
+${cfg.salud.notas||''}
+
+FAMILIA:
+${famCtx||cfg.familia.otros||'Sin datos configurados.'}
+
+Eres Leonor. Responde de forma clara, cálida y útil.${cfg.rsp==='corto'?' Máximo 3 líneas.':cfg.rsp==='profundo'?' Sé detallada y reflexiva.':''}`;
+
+  // Construir mensajes con historial reciente
+  const msgs=hist.slice(-8).map(h=>({
+    role: h.r==='leonor'?'assistant':'user',
+    content: h.t
+  }));
+
+  // Mensaje actual
+  let content;
+  if(imgB64){
+    content=[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgB64}},
+      {type:'text',text:txt||'Analiza esta imagen y dime qué ves.'}
+    ];
+  } else {
+    content=txt;
+  }
+  msgs.push({role:'user',content});
+
+  const maxT=cfg.rsp==='corto'?250:cfg.rsp==='profundo'?1500:700;
+
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':cfg.key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:cfg.modelo||'claude-opus-4-5',
+      max_tokens:maxT,
+      system:sys,
+      messages:msgs
+    })
+  });
+
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    throw new Error(e?.error?.message||`HTTP ${r.status}`);
+  }
+  const d=await r.json();
+  return d.content[0].text;
+}
+
+// ============================================================
+// MEMORIA VECTORIAL
+// ============================================================
+function embed(t){
+  const ws=t.toLowerCase().split(/\s+/);
+  return ws.map(w=>{ let h=0; for(let c of w) h=(h*31+c.charCodeAt(0))%1000; return h; });
+}
+function cosim(a,b){
+  const n=Math.min(a.length,b.length); if(!n) return 0;
+  let d=0,na=0,nb=0;
+  for(let i=0;i<n;i++){d+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  return d/(Math.sqrt(na)*Math.sqrt(nb)+1e-9);
+}
+function memSave(tipo,txt){
+  if(txt.length<15) return;
+  mem.unshift({tipo,txt,vec:embed(txt),f:new Date().toISOString()});
+  if(mem.length>300) mem=mem.slice(0,300);
+}
+function memSearch(q,k=3){
+  const qv=embed(q);
+  return mem.map(r=>({s:cosim(qv,r.vec),r}))
+    .sort((a,b)=>b.s-a.s).slice(0,k).map(x=>x.r.txt).join('\n');
+}
+function famSearch(t){
+  const tl=t.toLowerCase();
+  if(tl.includes('mamá')||tl.includes('mama')) return 'Mamá: '+cfg.familia.mama;
+  if(tl.includes('eli')) return 'Eli: '+cfg.familia.eli;
+  if(tl.includes('pepe')) return 'Pepe: '+cfg.familia.pepe;
+  return '';
+}
+
+// ============================================================
+// MICRÓFONO
+// ============================================================
+function toggleMic(){
+  if(micOn){ recog?.stop(); return; }
+
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Tu navegador no soporta voz. Usa Chrome.'); return; }
+
+  recog=new SR();
+  recog.lang='es-ES';
+  recog.continuous=false;
+  recog.interimResults=false;
+
+  recog.onstart=()=>{ micOn=true; document.getElementById('bmic').classList.add('rec'); setStatus('Escuchando…','amber'); };
+  recog.onresult=e=>{ const t=e.results[0][0].transcript; document.getElementById('inp').value=t; send(); };
+  recog.onend=()=>{ micOn=false; document.getElementById('bmic').classList.remove('rec'); setStatus('Listo · Memoria activa','green'); };
+  recog.onerror=e=>{ micOn=false; document.getElementById('bmic').classList.remove('rec'); toast('Mic error: '+e.error); };
+  recog.start();
+}
+
+// ============================================================
+// TTS
+// ============================================================
+function toggleTTS(){
+  tts=!tts;
+  document.getElementById('btts').classList.toggle('on',tts);
+  if(!tts) speechSynthesis.cancel();
+  toast(tts?'🔊 Leonor hablará':'🔇 Voz desactivada');
+}
+function speak(t){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='es-ES'; u.rate=0.92; u.pitch=1;
+  const vs=speechSynthesis.getVoices();
+  const v=vs.find(v=>v.lang.startsWith('es')&&/female|mujer|lucía|elena|mónica/i.test(v.name))
+          ||vs.find(v=>v.lang.startsWith('es'));
+  if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}
+speechSynthesis.onvoiceschanged=()=>{};
+
+// ============================================================
+// FOTO
+// ============================================================
+function handlePhoto(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    pendImg=e.target.result.split(',')[1];
+    document.getElementById('inp').value='Analiza esta imagen...';
+    toast('📷 Foto lista · Toca enviar');
+  };
+  r.readAsDataURL(f);
+  inp.value='';
+}
+
+// ============================================================
+// FINALIZAR SESIÓN
+// ============================================================
+async function finalizar(){
+  if(!cfg.key||hist.length===0){ toast('Sin conversación activa'); return; }
+  setStatus('Guardando sesión…','amber');
+  try{
+    const resumen=await callClaude(
+      'Escribe una entrada de diario breve (3-5 oraciones) desde la perspectiva de Leonor sobre esta conversación: '
+      +hist.slice(-10).map(h=>h.t).join(' | ')
+    );
+    memSave('diario', resumen);
+    const d=JSON.parse(localStorage.getItem(DB_KEY.diar)||'[]');
+    d.unshift({f:new Date().toISOString(),e:resumen});
+    localStorage.setItem(DB_KEY.diar, JSON.stringify(d.slice(0,60)));
+    hist=[];
+    save();
+    toast('🌙 Sesión guardada en diario');
+    setStatus('Descansando','green');
+    addMsg('leonor','🌙 Sesión guardada.\n\n'+resumen);
+  }catch(e){ toast('Error: '+e.message); setStatus('Listo · Memoria activa','green'); }
+}
+
+// ============================================================
+// CONFIG
+// ============================================================
+function openCfg(){
+  document.getElementById('c-key').value=cfg.key||'';
+  document.getElementById('c-nom').value=cfg.nombre||'';
+  document.getElementById('c-mod').value=cfg.modelo||'claude-opus-4-5';
+  document.getElementById('c-rsp').value=cfg.rsp||'normal';
+  document.getElementById('c-alma').value=cfg.alma||'';
+  document.getElementById('c-ctx').value=cfg.ctx||'';
+  document.getElementById('c-peso').value=cfg.salud?.peso||'';
+  document.getElementById('c-gluc').value=cfg.salud?.gluc||'';
+  document.getElementById('c-pres').value=cfg.salud?.pres||'';
+  document.getElementById('c-meta').value=cfg.salud?.meta||'';
+  document.getElementById('c-snot').value=cfg.salud?.notas||'';
+  document.getElementById('c-mama').value=cfg.familia?.mama||'';
+  document.getElementById('c-eli').value=cfg.familia?.eli||'';
+  document.getElementById('c-pepe').value=cfg.familia?.pepe||'';
+  document.getElementById('c-otros').value=cfg.familia?.otros||'';
+  document.getElementById('ov-cfg').classList.add('open');
+}
+function closeCfg(){ document.getElementById('ov-cfg').classList.remove('open'); }
+function saveCfg(){
+  cfg.key=document.getElementById('c-key').value.trim();
+  cfg.nombre=document.getElementById('c-nom').value.trim()||'Arquitecto';
+  cfg.modelo=document.getElementById('c-mod').value;
+  cfg.rsp=document.getElementById('c-rsp').value;
+  cfg.alma=document.getElementById('c-alma').value.trim();
+  cfg.ctx=document.getElementById('c-ctx').value.trim();
+  cfg.salud={
+    peso:document.getElementById('c-peso').value,
+    gluc:document.getElementById('c-gluc').value,
+    pres:document.getElementById('c-pres').value,
+    meta:document.getElementById('c-meta').value,
+    notas:document.getElementById('c-snot').value
+  };
+  cfg.familia={
+    mama:document.getElementById('c-mama').value,
+    eli:document.getElementById('c-eli').value,
+    pepe:document.getElementById('c-pepe').value,
+    otros:document.getElementById('c-otros').value
+  };
+  save();
+  closeCfg();
+  toast('✓ Guardado permanentemente');
+}
+function showTab(id,btn){
+  ['api','alma','ctx','salud','fam','sync'].forEach(t=>{
+    const el=document.getElementById('t-'+t);
+    if(el) el.style.display=t===id?'block':'none';
+  });
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// ============================================================
+// MEMORIA UI
+// ============================================================
+function openMem(){
+  const list=document.getElementById('mem-list');
+  if(!mem.length){ list.innerHTML='<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">Sin recuerdos aún</p>'; }
+  else list.innerHTML=mem.slice(0,40).map(m=>`
+    <div class="mit">
+      <div class="mm">${m.tipo} · ${new Date(m.f).toLocaleDateString('es',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+      ${esc(m.txt)}
+    </div>`).join('');
+  document.getElementById('ov-mem').classList.add('open');
+}
+function closeMem(){ document.getElementById('ov-mem').classList.remove('open'); }
+function clearMem(){
+  if(!confirm('¿Borrar toda la memoria de Leonor?')) return;
+  mem=[]; save(); closeMem(); toast('🗑 Memoria limpiada');
+}
+
+// ============================================================
+// EXPORTAR / IMPORTAR
+// ============================================================
+function exportar(){
+  const data={
+    version:2, exportado:new Date().toISOString(),
+    cfg:{...cfg,key:'[OCULTA - pégala tú]'},
+    mem, hist:hist.slice(-20),
+    diario:JSON.parse(localStorage.getItem(DB_KEY.diar)||'[]')
+  };
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=`leonor_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('📤 Exportado — importa en otro dispositivo');
+}
+function importar(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.cfg){ cfg={...cfg,...d.cfg}; cfg.key=cfg.key||''; }
+      if(d.mem) mem=d.mem;
+      if(d.hist) hist=d.hist;
+      if(d.diario) localStorage.setItem(DB_KEY.diar,JSON.stringify(d.diario));
+      save();
+      toast('✓ Datos importados. Recuerda poner tu API Key.');
+    }catch(err){ toast('Error importando: '+err.message); }
+  };
+  r.readAsText(f);
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function setStatus(t,c){
+  document.getElementById('stxt').textContent=t;
+  document.getElementById('sdot').style.background=
+    c==='green'?'#4caf79':c==='amber'?'#d4863a':'#e55';
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
