@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leonor">
+<meta name="theme-color" content="#0f1a14">
+<title>Leonor 2.0 · Gemini</title>
+<link rel="manifest" href="manifest.json">
+<noscript><p style="padding:20px;color:#6fcf97;background:#0f1a14;font-family:serif">Leonor necesita JavaScript activado.</p></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   LEONOR v9 — abril 2026
+   Fixes: mic x3 definitivo, resúmenes ricos,
+          buffer archivado manual, memoria conectada
+   ═══════════════════════════════════════ */
+:root{
+  --ink:#0f1a14;--paper:#e8f5ee;--warm:#6fcf97;--amber:#27ae60;
+  --soft:#7daa8e;--green:#4caf79;--red:#e05555;
+  --bubble:#152219;--panel:#111e17;--orange:#e07a27;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--ink);color:var(--paper);
+  display:flex;flex-direction:column;height:100dvh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.35;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E")}
+.hdr{padding:10px 14px 8px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(111,207,151,.14);background:rgba(15,26,20,.99);flex-shrink:0;z-index:10}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--warm),var(--amber));
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink);font-weight:500;
+  flex-shrink:0;box-shadow:0 2px 12px rgba(111,207,151,.25)}
+.hdr-title{font-size:14px;font-weight:400;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.mbadge{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:20px;
+  background:rgba(111,207,151,.12);color:var(--warm);border:1px solid rgba(111,207,151,.22);letter-spacing:.04em}
+.hdr-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);letter-spacing:.07em}
+.hdr-r{display:flex;gap:5px}
+.ico{width:32px;height:32px;border:none;border-radius:8px;background:rgba(111,207,151,.07);
+  color:var(--warm);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.ico:active{background:rgba(111,207,151,.2);transform:scale(.91)}
+.health-dash{padding:6px 14px 7px;background:rgba(15,26,20,.97);border-bottom:1px solid rgba(111,207,151,.1);flex-shrink:0}
+.health-row{display:flex;align-items:center;gap:8px}
+.health-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.06em;white-space:nowrap;flex-shrink:0}
+.health-bar-wrap{flex:1;height:5px;background:rgba(111,207,151,.1);border-radius:10px;overflow:hidden}
+.health-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--amber),var(--warm));transition:width .6s ease;min-width:2px}
+.health-stats{display:flex;gap:10px;flex-shrink:0}
+.hstat{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.04em}
+.hstat span{color:var(--warm)}
+.chat{flex:1;overflow-y:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:11px;
+  scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:8px;animation:fu .28s ease}
+@keyframes fu{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.msg.leonor .av{background:linear-gradient(135deg,var(--warm),var(--amber));color:var(--ink)}
+.msg.user .av{background:rgba(111,207,151,.1);border:1px solid rgba(111,207,151,.24);color:var(--warm);font-family:'DM Mono',monospace;font-size:10px}
+.mc{max-width:83%;display:flex;flex-direction:column;gap:2px}
+.mn{font-size:9px;font-family:'DM Mono',monospace;color:var(--soft);letter-spacing:.06em;text-transform:uppercase;padding:0 2px}
+.msg.user .mn{text-align:right}
+.mb{padding:10px 13px;border-radius:14px;font-size:15px;line-height:1.6;font-weight:300}
+.msg.leonor .mb{background:var(--bubble);border:1px solid rgba(111,207,151,.12);border-bottom-left-radius:3px;color:var(--paper)}
+.msg.user .mb{background:rgba(111,207,151,.13);border:1px solid rgba(111,207,151,.2);border-bottom-right-radius:3px;text-align:right}
+.mb img{max-width:100%;border-radius:7px;margin-top:6px;display:block}
+.bib-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;
+  margin-bottom:5px;background:rgba(111,207,151,.1);color:var(--warm);border:1px solid rgba(111,207,151,.2)}
+.link-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;
+  margin:2px 2px 0 0;background:rgba(39,174,96,.08);color:var(--amber);border:1px solid rgba(39,174,96,.2)}
+.mb b,.mb strong{font-weight:600;color:#a8e6c0}
+.mb em,.mb i{font-style:italic;color:#c8f0da}
+.mb code{font-family:'DM Mono',monospace;font-size:12px;background:rgba(111,207,151,.1);padding:1px 5px;border-radius:4px;color:#6fcf97}
+.mb pre{background:rgba(0,0,0,.3);border:1px solid rgba(111,207,151,.15);border-radius:8px;padding:10px;margin:6px 0;overflow-x:auto}
+.mb pre code{background:none;padding:0;font-size:12px}
+.mb ul,.mb ol{padding-left:18px;margin:4px 0}
+.mb li{margin:2px 0}
+.mb hr{border:none;border-top:1px solid rgba(111,207,151,.15);margin:8px 0}
+.msg-acts{display:flex;gap:5px;margin-top:3px;padding:0 2px;flex-wrap:wrap}
+.mab{padding:3px 9px;background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.13);
+  border-radius:20px;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;transition:.15s;-webkit-appearance:none;letter-spacing:.03em}
+.mab:active{background:rgba(111,207,151,.2);color:var(--warm)}
+.mab.ok{color:var(--green);border-color:rgba(76,175,121,.3)}
+.mab.saved{color:var(--amber);border-color:rgba(39,174,96,.35)}
+.think-b{display:flex;align-items:center;gap:4px;padding:10px 13px}
+.dot{width:5px;height:5px;background:var(--warm);border-radius:50%;opacity:.35;animation:pd 1.2s infinite}
+.dot:nth-child(2){animation-delay:.22s}.dot:nth-child(3){animation-delay:.44s}
+@keyframes pd{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.45);opacity:1}}
+.sbar{padding:4px 13px;display:flex;align-items:center;gap:6px;background:rgba(15,26,20,.99);flex-shrink:0}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:bl 3s infinite;flex-shrink:0}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.stxt{font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);letter-spacing:.05em}
+.ctrl-bar{background:rgba(15,26,20,.98);border-top:1px solid rgba(111,207,151,.1);
+  overflow:hidden;max-height:0;transition:max-height .28s ease;flex-shrink:0}
+.ctrl-bar.open{max-height:140px}
+.ctrl-inner{padding:8px 12px}
+.bib-scroll{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.bib-scroll::-webkit-scrollbar{display:none}
+.bchip{padding:3px 10px;border:1px solid rgba(111,207,151,.16);border-radius:20px;
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0;-webkit-appearance:none}
+.bchip.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.ctrl-toggles{display:flex;gap:6px;margin-top:5px}
+.ctog{flex:1;padding:5px 4px;border-radius:9px;border:1px solid rgba(111,207,151,.15);
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;
+  transition:.15s;-webkit-appearance:none;letter-spacing:.03em}
+.ctog.on-arch{background:rgba(111,207,151,.1);border-color:var(--warm);color:var(--warm)}
+.ctog.on-cons{background:rgba(39,174,96,.1);border-color:var(--amber);color:var(--amber)}
+.ctog.on-buf{background:rgba(224,122,39,.1);border-color:var(--orange);color:var(--orange)}
+.ctrl-mode-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--soft);letter-spacing:.06em;padding:0 2px;margin-top:3px;display:block}
+/* BUFFER PANEL */
+.buf-panel{background:rgba(15,26,20,.99);border-top:1px solid rgba(224,122,39,.25);
+  flex-shrink:0;overflow:hidden;max-height:0;transition:max-height .3s ease}
+.buf-panel.open{max-height:220px}
+.buf-inner{padding:10px 14px 12px}
+.buf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.buf-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:.06em}
+.buf-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft)}
+.buf-preview{font-size:12px;color:var(--soft);line-height:1.5;max-height:80px;
+  overflow-y:auto;border:1px solid rgba(224,122,39,.15);border-radius:8px;
+  padding:7px 10px;background:rgba(224,122,39,.04);white-space:pre-wrap;word-break:break-word}
+.buf-preview::-webkit-scrollbar{display:none}
+.buf-actions{display:flex;gap:6px;margin-top:8px}
+.buf-btn{flex:1;padding:7px;border-radius:9px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s;border:1px solid;-webkit-appearance:none}
+.buf-btn.commit{background:rgba(224,122,39,.12);border-color:var(--orange);color:var(--orange)}
+.buf-btn.commit:active{background:rgba(224,122,39,.25)}
+.buf-btn.discard{background:transparent;border-color:rgba(220,80,80,.25);color:var(--red)}
+/* BOTTOM */
+.bbar{padding:9px 12px 20px;background:rgba(15,26,20,.99);border-top:1px solid rgba(111,207,151,.11);flex-shrink:0}
+.irow{display:flex;align-items:flex-end;gap:7px;margin-bottom:8px}
+.iwrap{flex:1;position:relative}
+#inp{width:100%;background:rgba(232,245,238,.05);border:1px solid rgba(111,207,151,.18);
+  border-radius:22px;color:var(--paper);font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:300;padding:11px 42px 11px 15px;
+  outline:none;-webkit-appearance:none;resize:none;max-height:110px;line-height:1.4;overflow-y:auto;transition:border-color .2s}
+#inp:focus{border-color:rgba(111,207,151,.42)}
+#inp::placeholder{color:var(--soft);opacity:.5}
+#inp.mode-arch{border-color:rgba(111,207,151,.5)!important;background:rgba(111,207,151,.04)}
+#inp.mode-cons{border-color:rgba(39,174,96,.5)!important;background:rgba(39,174,96,.03)}
+#inp.mode-buf{border-color:rgba(224,122,39,.5)!important;background:rgba(224,122,39,.03)}
+.sbtn{position:absolute;right:5px;bottom:5px;width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--warm),var(--amber));border:none;color:var(--ink);font-size:13px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.sbtn:active{transform:scale(.87)}
+.sbtn:disabled{opacity:.35;pointer-events:none}
+.sbtn.mode-arch{background:linear-gradient(135deg,#6fcf97,#4caf79)}
+.sbtn.mode-cons{background:linear-gradient(135deg,#27ae60,#1e8449)}
+.sbtn.mode-buf{background:linear-gradient(135deg,var(--orange),#c0641a)}
+.bacts{display:flex;justify-content:space-around;gap:5px}
+.abtn{flex:1;padding:7px 1px;background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.15);
+  border-radius:11px;color:var(--warm);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.02em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;-webkit-appearance:none}
+.abtn:active{background:rgba(111,207,151,.18);transform:scale(.93)}
+.abtn span{font-size:15px}
+.abtn.on{border-color:rgba(76,175,121,.45);color:var(--green);background:rgba(76,175,121,.07)}
+.abtn.rec{border-color:rgba(220,80,80,.45);color:var(--red);background:rgba(220,80,80,.07)}
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(15,26,20,.9);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(5px)}
+.overlay.open{display:flex}
+.panel{background:var(--panel);border-top:1px solid rgba(111,207,151,.17);border-radius:20px 20px 0 0;
+  padding:20px 17px 44px;width:100%;max-height:85dvh;overflow-y:auto}
+.panel h2{font-size:17px;font-weight:400;color:var(--warm);margin-bottom:15px}
+.tabrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px}
+.tb{padding:5px 11px;border:1px solid rgba(111,207,151,.18);border-radius:20px;background:transparent;
+  color:var(--soft);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s;-webkit-appearance:none}
+.tb.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:10px;color:var(--soft);font-family:'DM Mono',monospace;letter-spacing:.07em;margin-bottom:5px;text-transform:uppercase}
+.fg input,.fg textarea,.fg select{width:100%;background:rgba(232,245,238,.05);border:1px solid rgba(111,207,151,.16);
+  border-radius:9px;color:var(--paper);font-family:'DM Mono',monospace;font-size:13px;padding:11px 12px;outline:none;-webkit-appearance:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus{border-color:var(--warm)}
+.fg textarea{font-family:'Cormorant Garamond',serif;font-size:14px;line-height:1.5;resize:vertical;min-height:70px}
+.fg select option{background:var(--panel)}
+.prim{width:100%;padding:13px;background:linear-gradient(135deg,var(--warm),var(--amber));border:none;
+  border-radius:11px;color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;
+  cursor:pointer;letter-spacing:.04em;transition:.15s;margin-top:5px}
+.prim:active{transform:scale(.97);opacity:.88}
+.sec{width:100%;padding:11px;margin-top:7px;background:transparent;border:1px solid rgba(111,207,151,.16);
+  border-radius:11px;color:var(--soft);font-family:'Cormorant Garamond',serif;font-size:15px;cursor:pointer}
+.divl{height:1px;background:rgba(111,207,151,.1);margin:12px 0}
+.stit{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}
+.mit{background:rgba(232,245,238,.03);border:1px solid rgba(111,207,151,.09);border-radius:9px;padding:10px;font-size:13px;line-height:1.5;margin-bottom:7px}
+.mit .mm{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:3px}
+.toast{position:fixed;bottom:118px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:#152219;border:1px solid rgba(111,207,151,.26);border-radius:10px;
+  padding:8px 17px;font-family:'DM Mono',monospace;font-size:11px;color:var(--warm);
+  opacity:0;transition:.22s;z-index:990;pointer-events:none;text-align:center;white-space:normal;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#file-inp{display:none}
+#pwa-banner{display:none;padding:8px 14px;background:rgba(111,207,151,.1);border-bottom:1px solid rgba(111,207,151,.2);
+  align-items:center;justify-content:space-between;flex-shrink:0}
+#pwa-banner.show{display:flex}
+#pwa-banner span{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm)}
+#pwa-banner button{padding:4px 12px;background:var(--warm);border:none;border-radius:20px;
+  color:var(--ink);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer}
+.bib-item{background:rgba(232,245,238,.03);border:1px solid rgba(111,207,151,.09);border-radius:9px;padding:10px;margin-bottom:7px}
+.bib-item .bib-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.bib-item .bib-name{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);font-weight:500}
+.bib-item .bib-cnt{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft)}
+.bib-item .bib-prev{font-size:12px;color:var(--soft);line-height:1.4}
+.rel-section{margin-top:6px;padding-top:6px;border-top:1px solid rgba(111,207,151,.08)}
+.rel-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--soft);letter-spacing:.05em;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="pwa-banner">
+  <span>📱 Instalar Leonor como app</span>
+  <button onclick="instalarPWA()">Instalar</button>
+</div>
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">L</div>
+    <div>
+      <div class="hdr-title">Leonor 2.0 <span class="mbadge" id="mbadge">2.5 Flash</span></div>
+      <div class="hdr-sub">Google · Gemini</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <button class="ico" onclick="openBib()" title="Biblioteca">📚</button>
+    <button class="ico" onclick="openMem()" title="Memoria">🧠</button>
+    <button class="ico" onclick="recargar()" title="Actualizar">🔄</button>
+    <button class="ico" onclick="openCfg()" title="Configurar">⚙</button>
+    <button class="ico" onclick="finalizar()" title="Finalizar sesión">🌙</button>
+  </div>
+</header>
+<div class="health-dash">
+  <div class="health-row">
+    <span class="health-label">PESO</span>
+    <div class="health-bar-wrap"><div class="health-bar-fill" id="health-fill" style="width:0%"></div></div>
+    <div class="health-stats">
+      <div class="hstat" id="hstat-peso"><span>–</span> kg</div>
+      <div class="hstat" id="hstat-cal">Cal: <span>–</span></div>
+      <div class="hstat" id="hstat-gluc">G: <span>–</span></div>
+    </div>
+  </div>
+</div>
+<main class="chat" id="chat" aria-live="polite"></main>
+<div class="sbar"><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">Iniciando…</span></div>
+<div class="ctrl-bar" id="ctrl-bar">
+  <div class="ctrl-inner">
+    <div class="bib-scroll" id="bib-chips"></div>
+    <div class="ctrl-toggles">
+      <button class="ctog" id="tog-arch" onclick="toggleArch()">📥 Archivar</button>
+      <button class="ctog" id="tog-buf"  onclick="toggleBuf()">📋 Buffer</button>
+      <button class="ctog" id="tog-cons" onclick="toggleCons()">🔍 Consultar</button>
+    </div>
+    <span class="ctrl-mode-lbl" id="ctrl-mode-lbl">💬 Conversación casual</span>
+  </div>
+</div>
+<div class="buf-panel" id="buf-panel">
+  <div class="buf-inner">
+    <div class="buf-header">
+      <span class="buf-title">📋 BUFFER EN CURSO</span>
+      <span class="buf-count" id="buf-count">0 fragmentos</span>
+    </div>
+    <div class="buf-preview" id="buf-preview">— vacío —</div>
+    <div class="buf-actions">
+      <button class="buf-btn commit" onclick="commitBuffer()">✅ Destilar y archivar ahora</button>
+      <button class="buf-btn discard" onclick="descartarBuffer()">🗑 Descartar</button>
+    </div>
+  </div>
+</div>
+<footer class="bbar">
+  <div class="irow">
+    <button class="ico" style="flex-shrink:0" onclick="toggleCtrlBar()" title="Biblioteca">📂</button>
+    <div class="iwrap">
+      <textarea id="inp" placeholder="Habla con Leonor… (/peso 95 · /calorias 1800)" rows="1"
+        oninput="resizeInp(this)" onkeydown="handleKey(event)"></textarea>
+      <button class="sbtn" id="sbtn" onclick="enviar()" aria-label="Enviar">➤</button>
+    </div>
+  </div>
+  <div class="bacts">
+    <button class="abtn" id="bmic" onclick="toggleMic()"><span>🎙</span>Hablar</button>
+    <button class="abtn" id="btts" onclick="toggleTTS()"><span>🔊</span>Escuchar</button>
+    <button class="abtn" onclick="document.getElementById('file-inp').click()"><span>🖼</span>Imagen</button>
+    <button class="abtn" onclick="openGenImg()"><span>🍌</span>Crear</button>
+    <button class="abtn" onclick="openCfg()"><span>📝</span>Alma</button>
+  </div>
+</footer>
+<input type="file" id="file-inp" accept="image/*" onchange="handleFoto(this)">
+<div class="toast" id="toast" role="alert"></div>
+
+<!-- CONFIG OVERLAY -->
+<div class="overlay" id="ov-cfg" onclick="if(event.target===this)closeCfg()">
+  <div class="panel">
+    <h2>⚙ Configurar Leonor</h2>
+    <div class="tabrow">
+      <button class="tb on" onclick="showTab('api',this)">API</button>
+      <button class="tb" onclick="showTab('alma',this)">Alma</button>
+      <button class="tb" onclick="showTab('ctx',this)">Contexto</button>
+      <button class="tb" onclick="showTab('salud',this)">Salud</button>
+      <button class="tb" onclick="showTab('fam',this)">Familia</button>
+      <button class="tb" onclick="showTab('sync',this)">Sync</button>
+    </div>
+    <div id="t-api">
+      <div class="fg"><label>API Key · Google AI Studio</label><input type="password" id="c-key" placeholder="AIzaSy…"></div>
+      <div class="fg"><label>Tu nombre</label><input type="text" id="c-nom" placeholder="Héctor"></div>
+      <div class="fg"><label>Modelo principal</label>
+        <select id="c-mod">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash ★ estable</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite · rápido</option>
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash · probado</option>
+          <option value="gemini-3-flash">Gemini 3 Flash 🆕</option>
+          <option value="gemini-3.1-pro">Gemini 3.1 Pro 🆕</option>
+        </select></div>
+      <div class="fg"><label>Modelo para imágenes</label>
+        <select id="c-imgmod">
+          <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image ★</option>
+          <option value="gemini-3.1-flash-image">Gemini 3.1 Flash Image 🆕</option>
+          <option value="gemini-3-pro-image">Gemini 3 Pro Image 🆕</option>
+        </select></div>
+      <div class="fg"><label>Modo de respuesta</label>
+        <select id="c-rsp">
+          <option value="normal">Normal</option>
+          <option value="corto">Breve (3 líneas)</option>
+          <option value="profundo">Profundo</option>
+        </select></div>
+    </div>
+    <div id="t-alma" style="display:none"><div class="fg"><label>Alma de Leonor</label><textarea id="c-alma" rows="6"></textarea></div></div>
+    <div id="t-ctx"  style="display:none"><div class="fg"><label>Contexto actual</label><textarea id="c-ctx" rows="5"></textarea></div></div>
+    <div id="t-salud" style="display:none">
+      <div class="fg"><label>Peso actual (kg)</label><input type="text" id="c-peso" placeholder="95"></div>
+      <div class="fg"><label>Meta de peso (kg)</label><input type="text" id="c-meta" placeholder="85"></div>
+      <div class="fg"><label>Glucosa (mg/dL)</label><input type="text" id="c-gluc" placeholder="110"></div>
+      <div class="fg"><label>Presión arterial</label><input type="text" id="c-pres" placeholder="120/80"></div>
+      <div class="fg"><label>Calorías objetivo / día</label><input type="text" id="c-calobj" placeholder="1800"></div>
+      <div class="fg"><label>Notas de salud</label><textarea id="c-snot" rows="3"></textarea></div>
+    </div>
+    <div id="t-fam" style="display:none">
+      <div class="fg"><label>Mamá</label><textarea id="c-mama" rows="3"></textarea></div>
+      <div class="fg"><label>Eli</label><textarea id="c-eli" rows="3"></textarea></div>
+      <div class="fg"><label>Pepe</label><textarea id="c-pepe" rows="3"></textarea></div>
+      <div class="fg"><label>Otros</label><textarea id="c-otros" rows="4"></textarea></div>
+    </div>
+    <div id="t-sync" style="display:none">
+      <button class="prim" onclick="exportarDatos()" style="background:rgba(111,207,151,.12);color:var(--warm);border:1px solid rgba(111,207,151,.24);margin-bottom:9px">📤 Exportar todo (JSON)</button>
+      <div class="fg"><label>Importar JSON</label><input type="file" id="c-imp" accept=".json" onchange="importarDatos(this)" style="font-size:11px;color:var(--soft);padding:10px"></div>
+      <div class="divl"></div>
+      <div class="stit">Instalar como app (PWA)</div>
+      <p style="font-size:12px;color:var(--soft);font-family:'DM Mono',monospace;line-height:2">1. Abre en <b style="color:var(--warm)">Chrome</b><br>2. Menú ⋮ → <b style="color:var(--warm)">"Añadir a pantalla de inicio"</b></p>
+    </div>
+    <div class="divl"></div>
+    <button class="prim" onclick="guardarCfg()">💾 Guardar configuración</button>
+    <button class="sec" onclick="closeCfg()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MEMORIA OVERLAY -->
+<div class="overlay" id="ov-mem" onclick="if(event.target===this)closeMem()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">🧠 Memoria</h2><button class="ico" onclick="closeMem()">✕</button>
+    </div>
+    <p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);margin-bottom:12px" id="mem-stats"></p>
+    <div id="mem-list"></div>
+    <div class="divl"></div>
+    <button class="prim" onclick="limpiarMem()" style="background:rgba(220,80,80,.12);color:#e08080;border:1px solid rgba(220,80,80,.25)">🗑 Limpiar toda la memoria</button>
+  </div>
+</div>
+
+<!-- BIBLIOTECA OVERLAY -->
+<div class="overlay" id="ov-bib" onclick="if(event.target===this)closeBib()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">📚 Biblioteca</h2><button class="ico" onclick="closeBib()">✕</button>
+    </div>
+    <p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);margin-bottom:12px">11 niveles · Memoria conectada activa</p>
+    <div id="bib-list"></div>
+    <div class="divl"></div>
+    <button class="prim" onclick="limpiarBib()" style="background:rgba(220,80,80,.12);color:#e08080;border:1px solid rgba(220,80,80,.25)">🗑 Vaciar Biblioteca completa</button>
+  </div>
+</div>
+
+<!-- IMAGEN OVERLAY -->
+<div class="overlay" id="ov-img" onclick="if(event.target===this)closeGenImg()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">🍌 Crear imagen</h2><button class="ico" onclick="closeGenImg()">✕</button>
+    </div>
+    <div class="fg"><label>Descripción</label><textarea id="img-prompt" rows="4"></textarea></div>
+    <div class="fg"><label>Estilo</label>
+      <select id="img-estilo">
+        <option value="">Sin estilo</option>
+        <option value="fotorrealista, alta definición">Fotorrealista</option>
+        <option value="ilustración digital, vibrante">Ilustración digital</option>
+        <option value="pintura al óleo, artístico">Pintura artística</option>
+        <option value="minimalista, líneas limpias">Minimalista</option>
+        <option value="anime, estilo japonés">Anime</option>
+        <option value="boceto a lápiz, blanco y negro">Boceto a lápiz</option>
+      </select></div>
+    <button class="prim" id="gen-img-btn" onclick="generarImagen()">🍌 Generar imagen</button>
+    <button class="sec" onclick="closeGenImg()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════
+// LEONOR v9 — abril 2026
+// ═══════════════════════════════════════
+const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL_IDS={
+  'gemini-2.5-flash':'gemini-2.5-flash','gemini-2.5-flash-lite':'gemini-2.5-flash-lite',
+  'gemini-2.0-flash':'gemini-2.0-flash','gemini-3-flash':'gemini-3-flash',
+  'gemini-3.1-pro':'gemini-3.1-pro','gemini-2.5-flash-image':'gemini-2.5-flash-image',
+  'gemini-3.1-flash-image':'gemini-3.1-flash-image','gemini-3-pro-image':'gemini-3-pro-image',
+};
+const NOMBRES_BADGE={
+  'gemini-2.5-flash':'2.5 Flash','gemini-2.5-flash-lite':'2.5 Lite',
+  'gemini-2.0-flash':'2.0 Flash','gemini-3-flash':'3 Flash 🆕','gemini-3.1-pro':'3.1 Pro 🆕',
+};
+const MIGRAR={
+  'gemini-2.5-flash-preview-05-20':'gemini-2.5-flash','gemini-2.5-flash-lite-preview-06-17':'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-exp':'gemini-2.0-flash','gemini-2.0-flash-001':'gemini-2.0-flash',
+  'gemini-2.5-flash-preview-image-generation':'gemini-2.5-flash-image',
+  'gemini-3.1-flash-image-preview':'gemini-3.1-flash-image',
+};
+const NIVELES=[
+  {id:'alma',icon:'✨',label:'Alma'},{id:'contexto',icon:'🗺',label:'Contexto'},
+  {id:'estadistica',icon:'📊',label:'Estadística'},{id:'legado',icon:'🏛',label:'Legado'},
+  {id:'escudo',icon:'🛡',label:'Escudo'},{id:'diario',icon:'📖',label:'Diario'},
+  {id:'taller',icon:'🔧',label:'Taller'},{id:'ecosistema',icon:'🌿',label:'Ecosistema'},
+  {id:'codigo',icon:'💻',label:'Código'},{id:'ideas',icon:'💡',label:'Ideas'},
+  {id:'directorio',icon:'📋',label:'Directorio'},
+];
+const CFG_DEF={
+  key:'',nombre:'Héctor',modelo:'gemini-2.5-flash',imgModelo:'gemini-2.5-flash-image',rsp:'normal',
+  alma:'Soy Leonor, asistente personal cercana y empática de Héctor. Soy directa, honesta y cálida. Lo conozco bien: su familia, sus metas de salud y sus proyectos de desarrollo. Uso español de México de forma natural.',
+  ctx:'',salud:{peso:'',meta:'85',gluc:'',pres:'',notas:'',calobj:'1800',calHoy:'0'},
+  familia:{mama:'',eli:'',pepe:'',otros:''}
+};
+let cfg=JSON.parse(JSON.stringify(CFG_DEF));
+let mem=[],hist=[],bibData={};
+let tts=false,pendImg=null,enviando=false,db=null,deferredPrompt=null;
+let ctrlOpen=false,modeArch=false,modeCons=false,modeBuf=false,nivelActivo=NIVELES[0].id;
+let bufFragmentos=[];
+
+// ═══════════════════════════════════════
+// MICRÓFONO v9 — FIX DEFINITIVO
+// continuous:false + interimResults:false = UNA sola llamada a onresult
+// ═══════════════════════════════════════
+const MIC={inst:null,activo:false,finalText:''};
+
+function toggleMic(){
+  if(MIC.activo){ _micStop(); return; }
+  if(enviando){ toast('Espera la respuesta actual'); return; }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Usa Chrome para reconocimiento de voz'); return; }
+  _micDestroy(); // limpiar instancia previa siempre
+  MIC.inst=new SR();
+  MIC.inst.lang='es-MX';
+  MIC.inst.continuous=false;       // FIX: false = una sola grabación
+  MIC.inst.interimResults=false;   // FIX: sin resultados parciales = sin triplicados
+  MIC.inst.maxAlternatives=1;
+  MIC.finalText='';
+  const inp=document.getElementById('inp');
+
+  MIC.inst.onstart=()=>{
+    MIC.activo=true; MIC.finalText='';
+    document.getElementById('bmic').classList.add('rec');
+    inp.placeholder='🎙 Di tu mensaje…';
+    setStatus('🎙 Escuchando…','amber');
+    if(navigator.vibrate) navigator.vibrate([25,40,25]);
+  };
+
+  MIC.inst.onresult=e=>{
+    // Con continuous:false e interimResults:false, esto solo ocurre UNA vez
+    if(e.results.length===0) return;
+    const transcript=e.results[0][0].transcript.trim();
+    if(!transcript) return;
+    MIC.finalText=transcript;
+    inp.value=transcript;
+    resizeInp(inp);
+  };
+
+  MIC.inst.onend=()=>{
+    MIC.activo=false;
+    document.getElementById('bmic').classList.remove('rec');
+    inp.placeholder='Habla con Leonor… (/peso 95 · /calorias 1800)';
+    if(MIC.finalText.trim()){
+      setStatus('✓ Revisa y toca ➤','amber');
+      inp.focus(); inp.selectionStart=inp.selectionEnd=inp.value.length;
+    } else {
+      setStatus('Listo · Memoria activa','green');
+    }
+    if(navigator.vibrate) navigator.vibrate(30);
+    MIC.inst=null;
+  };
+
+  MIC.inst.onerror=e=>{
+    MIC.activo=false; _micDestroy();
+    document.getElementById('bmic').classList.remove('rec');
+    inp.placeholder='Habla con Leonor… (/peso 95 · /calorias 1800)';
+    const msgs={'not-allowed':'Permiso de micrófono denegado.','no-speech':'No se detectó voz.','network':'Error de red.'};
+    toast(msgs[e.error]||'Error mic: '+e.error);
+    setStatus('Listo · Memoria activa','green');
+  };
+
+  try{ MIC.inst.start(); }
+  catch(e){ toast('Error iniciando micrófono'); _micDestroy(); }
+}
+function _micStop(){ if(MIC.inst){ try{ MIC.inst.stop(); }catch(e){} } MIC.activo=false; }
+function _micDestroy(){
+  if(MIC.inst){
+    try{ MIC.inst.abort(); }catch(e){}
+    MIC.inst.onstart=MIC.inst.onresult=MIC.inst.onend=MIC.inst.onerror=null;
+    MIC.inst=null;
+  }
+  MIC.activo=false;
+}
+
+// ═══ TTS FIX ═══
+function toggleTTS(){
+  tts=!tts;
+  document.getElementById('btts').classList.toggle('on',tts);
+  if(!tts){ window.speechSynthesis.cancel(); setTimeout(()=>window.speechSynthesis.cancel(),50); }
+  toast(tts?'🔊 Leonor hablará':'🔇 Voz desactivada');
+}
+function speak(t){
+  window.speechSynthesis.cancel();
+  setTimeout(()=>{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,'').replace(/[*_#`•]/g,'').trim());
+    u.lang='es-MX'; u.rate=0.9; u.pitch=1.05;
+    const vs=window.speechSynthesis.getVoices();
+    const v=vs.find(v=>v.lang.startsWith('es')&&/female|femenin|lucía|elena|mónica|paulina/i.test(v.name))||vs.find(v=>v.lang.startsWith('es'));
+    if(v) u.voice=v;
+    window.speechSynthesis.speak(u);
+  },100);
+}
+if(window.speechSynthesis&&window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
+
+// ═══ PWA ═══
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; document.getElementById('pwa-banner').classList.add('show'); });
+window.addEventListener('appinstalled',()=>{ document.getElementById('pwa-banner').classList.remove('show'); toast('✅ Leonor instalada'); });
+function instalarPWA(){ if(!deferredPrompt){ toast('Usa Chrome → Menú ⋮ → Añadir a pantalla de inicio'); return; } deferredPrompt.prompt(); deferredPrompt.userChoice.then(r=>{ if(r.outcome==='accepted') toast('✅ Instalando…'); deferredPrompt=null; document.getElementById('pwa-banner').classList.remove('show'); }); }
+
+// ═══ INDEXEDDB ═══
+function abrirDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('LeonorDB',3);
+    req.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); if(!d.objectStoreNames.contains('bibliotecas')) d.createObjectStore('bibliotecas'); };
+    req.onsuccess=e=>{ db=e.target.result; res(db); }; req.onerror=()=>rej(req.error);
+  });
+}
+function dbSet(key,value,store='kv'){ return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); tx.objectStore(store).put(value,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+function dbGet(key,store='kv'){ return new Promise((res,rej)=>{ const tx=db.transaction(store,'readonly'); const req=tx.objectStore(store).get(key); req.onsuccess=()=>res(req.result??null); req.onerror=()=>rej(req.error); }); }
+async function guardarTodo(){ try{ await dbSet('cfg',cfg); await dbSet('mem',mem.slice(0,400)); await dbSet('bib',bibData,'bibliotecas'); }catch(e){ console.warn('Error guardando:',e); } }
+async function cargarTodo(){
+  try{
+    const c=await dbGet('cfg');
+    if(c) cfg={...CFG_DEF,...c,salud:{...CFG_DEF.salud,...c.salud},familia:{...CFG_DEF.familia,...c.familia}};
+    if(MIGRAR[cfg.modelo]) cfg.modelo=MIGRAR[cfg.modelo];
+    if(MIGRAR[cfg.imgModelo]) cfg.imgModelo=MIGRAR[cfg.imgModelo];
+    const m=await dbGet('mem'); if(m) mem=m;
+    const b=await dbGet('bib','bibliotecas'); if(b) bibData=b;
+    hist=[];
+  }catch(e){ console.warn('DB load error:',e); }
+}
+
+// ═══ INIT ═══
+(async function init(){
+  try{ await abrirDB(); await cargarTodo(); }catch(e){ console.warn('IndexedDB no disponible:',e); }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  actualizarBadge(); actualizarDashboard(); renderBibChips();
+  setStatus('Listo · Memoria activa','green');
+  bienvenida();
+  if(navigator.vibrate) navigator.vibrate(25);
+})();
+
+function bienvenida(){ const h=new Date().getHours(); const s=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'; addMsg('leonor',`${s}, ${cfg.nombre}.\n¿En qué puedo ayudarte hoy?`); }
+function recargar(){ if(confirm('¿Actualizar Leonor?\nTu configuración y memoria se conservan.')) location.reload(); }
+function actualizarBadge(){ document.getElementById('mbadge').textContent=NOMBRES_BADGE[cfg.modelo]||cfg.modelo; }
+
+// ═══ DASHBOARD ═══
+function actualizarDashboard(){
+  const peso=parseFloat(cfg.salud.peso)||0,calHoy=parseInt(cfg.salud.calHoy)||0,gluc=cfg.salud.gluc||'–';
+  const pct=peso?Math.min(100,Math.max(0,((105-peso)/10)*100)):0;
+  document.getElementById('health-fill').style.width=pct.toFixed(1)+'%';
+  document.getElementById('hstat-peso').innerHTML=`<span>${peso||'–'}</span> kg`;
+  document.getElementById('hstat-cal').innerHTML=`Cal: <span>${calHoy}</span>`;
+  document.getElementById('hstat-gluc').innerHTML=`G: <span>${gluc}</span>`;
+}
+
+// ═══ SLASH COMMANDS ═══
+function procesarSlash(txt){
+  const tl=txt.trim().toLowerCase();
+  const mPeso=tl.match(/^\/peso\s+([\d.]+)/);
+  if(mPeso){ cfg.salud.peso=mPeso[1]; guardarTodo(); actualizarDashboard(); addMsg('leonor',`⚖ Peso: **${mPeso[1]} kg** · Progreso: ${Math.min(100,Math.max(0,((105-parseFloat(mPeso[1]))/10)*100)).toFixed(0)}%`); return true; }
+  const mCal=tl.match(/^\/calorias?\s+([\d]+)/);
+  if(mCal){ const prev=parseInt(cfg.salud.calHoy)||0,nueva=prev+parseInt(mCal[1]),obj=parseInt(cfg.salud.calobj)||1800; cfg.salud.calHoy=String(nueva); guardarTodo(); actualizarDashboard(); addMsg('leonor',`🍽 +${mCal[1]} cal · Total: **${nueva}** · Restantes: ${Math.max(0,obj-nueva)}/${obj}`); return true; }
+  if(tl==='/resetcal'){ cfg.salud.calHoy='0'; guardarTodo(); actualizarDashboard(); addMsg('leonor','🔁 Calorías reiniciadas a 0.'); return true; }
+  return false;
+}
+
+// ═══ CONTROL BAR ═══
+function renderBibChips(){
+  document.getElementById('bib-chips').innerHTML=NIVELES.map(n=>`<button class="bchip${n.id===nivelActivo?' on':''}" onclick="selecNivel('${n.id}',this)">${n.icon} ${n.label}</button>`).join('');
+}
+function selecNivel(id,btn){ nivelActivo=id; document.querySelectorAll('.bchip').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); actualizarModoUI(); }
+function toggleCtrlBar(){ ctrlOpen=!ctrlOpen; document.getElementById('ctrl-bar').classList.toggle('open',ctrlOpen); }
+function toggleArch(){ modeArch=!modeArch; if(modeArch){ modeCons=false; modeBuf=false; cerrarBufPanel(); } actualizarModoUI(); }
+function toggleCons(){ modeCons=!modeCons; if(modeCons){ modeArch=false; modeBuf=false; cerrarBufPanel(); } actualizarModoUI(); }
+function toggleBuf(){ modeBuf=!modeBuf; if(modeBuf){ modeArch=false; modeCons=false; abrirBufPanel(); } else { cerrarBufPanel(); } actualizarModoUI(); }
+function actualizarModoUI(){
+  const nivel=NIVELES.find(n=>n.id===nivelActivo);
+  document.getElementById('tog-arch').className='ctog'+(modeArch?' on-arch':'');
+  document.getElementById('tog-cons').className='ctog'+(modeCons?' on-cons':'');
+  document.getElementById('tog-buf').className='ctog'+(modeBuf?' on-buf':'');
+  const lbl=document.getElementById('ctrl-mode-lbl');
+  const inp=document.getElementById('inp'),sbtn=document.getElementById('sbtn');
+  if(modeArch){ lbl.textContent=`📥 Archivado inmediato → ${nivel?.label}`; inp.className='mode-arch'; sbtn.className='sbtn mode-arch'; inp.placeholder=`Escribe para archivar en ${nivel?.label}…`; }
+  else if(modeCons){ lbl.textContent=`🔍 Consultando → ${nivel?.label}`; inp.className='mode-cons'; sbtn.className='sbtn mode-cons'; inp.placeholder=`Consultar en ${nivel?.label}…`; }
+  else if(modeBuf){ lbl.textContent=`📋 Buffer activo → ${nivel?.label}`; inp.className='mode-buf'; sbtn.className='sbtn mode-buf'; inp.placeholder=`Agrega fragmento al buffer de ${nivel?.label}…`; }
+  else{ lbl.textContent='💬 Conversación casual'; inp.className=''; sbtn.className='sbtn'; inp.placeholder='Habla con Leonor… (/peso 95 · /calorias 1800)'; }
+}
+
+// ═══ BUFFER ═══
+function abrirBufPanel(){ document.getElementById('buf-panel').classList.add('open'); actualizarBufUI(); }
+function cerrarBufPanel(){ document.getElementById('buf-panel').classList.remove('open'); }
+function actualizarBufUI(){
+  document.getElementById('buf-count').textContent=`${bufFragmentos.length} fragmento${bufFragmentos.length!==1?'s':''}`;
+  document.getElementById('buf-preview').textContent=bufFragmentos.length?bufFragmentos.join('\n\n---\n\n'):'— vacío —';
+}
+function agregarAlBuffer(txt){ if(!txt.trim()) return; bufFragmentos.push(txt.trim()); actualizarBufUI(); toast(`📋 Fragmento ${bufFragmentos.length} agregado`); }
+
+async function commitBuffer(){
+  if(!bufFragmentos.length){ toast('El buffer está vacío'); return; }
+  if(!cfg.key){ toast('⚙ Necesitas tu API Key'); return; }
+  const textoCompleto=bufFragmentos.join('\n\n');
+  const nivel=nivelActivo,nivelInfo=NIVELES.find(n=>n.id===nivel);
+  cerrarBufPanel(); mostrarThink(); setStatus('Destilando buffer…','amber');
+  try{
+    const resumen=await destilarTexto(textoCompleto,nivelInfo);
+    const vinculos=await encontrarVinculos(nivel,resumen);
+    if(!bibData[nivel]) bibData[nivel]=[];
+    bibData[nivel].unshift({resumen,raw:textoCompleto.substring(0,600),fecha:new Date().toISOString(),vinculos});
+    if(bibData[nivel].length>30) bibData[nivel]=bibData[nivel].slice(0,30);
+    await guardarTodo();
+    quitarThink();
+    let msgF=`📥 **Buffer archivado en ${nivelInfo.icon} ${nivelInfo.label}**\n\n${resumen}`;
+    if(vinculos.length) msgF+=`\n\n🔗 **Conexiones detectadas:**\n${vinculos.map(v=>'• '+v).join('\n')}`;
+    addMsg('leonor',msgF,null,`${nivelInfo.icon} ${nivelInfo.label}`);
+    bufFragmentos=[]; actualizarBufUI();
+    setStatus('Listo · Memoria activa','green'); toast(`✅ Archivado en ${nivelInfo.label}`);
+  }catch(e){ quitarThink(); addMsg('leonor',`⚠ Error destilando: ${e.message}`); setStatus('Error','red'); }
+}
+
+function descartarBuffer(){
+  if(!bufFragmentos.length){ cerrarBufPanel(); modeBuf=false; actualizarModoUI(); return; }
+  if(!confirm(`¿Descartar ${bufFragmentos.length} fragmento(s)?`)) return;
+  bufFragmentos=[]; actualizarBufUI(); cerrarBufPanel(); modeBuf=false; actualizarModoUI(); toast('🗑 Buffer descartado');
+}
+
+// ═══ DESTILACIÓN RICA — prompt reescrito ═══
+async function destilarTexto(textoRaw,nivelInfo){
+  const prompt=`Eres Leonor, asistente personal inteligente de Héctor. Crea un RESUMEN EJECUTIVO RICO de este contenido para guardarlo en tu memoria permanente en la carpeta "${nivelInfo.label}".
+
+REGLAS OBLIGATORIAS:
+- Mínimo 5 puntos bullet con información CONCRETA (datos, fechas, nombres, números, metas, decisiones)
+- Entre 150 y 400 palabras en total
+- Usa bullets (•) para organizar
+- Extrae el CONTEXTO general y la RELEVANCIA de esta información
+- Última línea debe ser: "🎯 Relevancia: [para qué sirve este recuerdo en el futuro]"
+- Escribe en español de México, tono de Leonor (cálido y preciso)
+- JAMÁS escribas menos de 5 bullets, JAMÁS hagas un resumen de 2-3 palabras
+
+TEXTO A DESTILAR:
+${textoRaw}
+
+RESUMEN EJECUTIVO:`;
+  return await llamarGeminiDirecto(prompt,700);
+}
+
+// ═══ MEMORIA CONECTADA — petición de Leonor ═══
+async function encontrarVinculos(nivelOrigen,resumenNuevo){
+  const otrosNiveles=NIVELES.filter(n=>n.id!==nivelOrigen&&bibData[n.id]?.length>0).slice(0,5);
+  if(!otrosNiveles.length) return [];
+  const contextoOtros=otrosNiveles.map(n=>`[${n.label}]: ${bibData[n.id][0].resumen.substring(0,120)}`).join('\n\n');
+  const prompt=`Eres Leonor. Detecta conexiones REALES Y ÚTILES entre la información nueva y tu memoria existente.
+
+NUEVA INFORMACIÓN (resumen):
+${resumenNuevo.substring(0,250)}
+
+TU MEMORIA EXISTENTE:
+${contextoOtros}
+
+INSTRUCCIÓN: Lista de 0 a 3 conexiones concretas y accionables. Una por línea. Formato: "[Carpeta]: descripción de la conexión y cómo se relaciona". Si no hay conexiones reales responde exactamente: NINGUNA
+
+CONEXIONES:`;
+  try{
+    const resp=await llamarGeminiDirecto(prompt,250);
+    if(!resp||resp.trim().toUpperCase()==='NINGUNA') return [];
+    return resp.split('\n').map(l=>l.trim()).filter(l=>l.length>8).slice(0,3);
+  }catch(e){ return []; }
+}
+
+async function archivarInmediato(nivel,textoRaw){
+  const nivelInfo=NIVELES.find(n=>n.id===nivel);
+  if(!cfg.key) throw new Error('Sin API Key');
+  setStatus('Destilando…','amber');
+  const resumen=await destilarTexto(textoRaw,nivelInfo);
+  const vinculos=await encontrarVinculos(nivel,resumen);
+  if(!bibData[nivel]) bibData[nivel]=[];
+  bibData[nivel].unshift({resumen,raw:textoRaw.substring(0,600),fecha:new Date().toISOString(),vinculos});
+  if(bibData[nivel].length>30) bibData[nivel]=bibData[nivel].slice(0,30);
+  await guardarTodo();
+  return {resumen,vinculos,nivelInfo};
+}
+
+async function consultarBiblioteca(nivel){
+  const entradas=bibData[nivel]||[];
+  if(!entradas.length) return null;
+  return entradas.slice(0,4).map(e=>e.resumen).join('\n\n---\n\n');
+}
+
+// ═══ UI CHAT ═══
+function resizeInp(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,112)+'px'; }
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); enviar(); } }
+function renderMd(raw){
+  return raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```([\s\S]*?)```/g,(_,c)=>`<pre><code>${c.trim()}</code></pre>`)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/_(.+?)_/g,'<em>$1</em>')
+    .replace(/^---$/gm,'<hr>').replace(/^[•*-] (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>');
+}
+function escH(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function addMsg(rol,txt,imgB64=null,tagLabel=null){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div'); d.className='msg '+rol;
+  const av=rol==='leonor'?'L':(cfg.nombre||'H').substring(0,2).toUpperCase();
+  const nm=rol==='leonor'?'Leonor':cfg.nombre;
+  const imgH=imgB64?`<img src="data:image/jpeg;base64,${imgB64}" alt="foto" loading="lazy">`:'';
+  const tagH=tagLabel?`<div class="bib-tag">${escH(tagLabel)}</div>`:'';
+  const actsHTML=rol==='leonor'?`<div class="msg-acts">
+    <button class="mab" onclick="copiarMsg(this,${JSON.stringify(txt)})">📋 Copiar</button>
+    <button class="mab" onclick="oir(${JSON.stringify(txt)})">🔊 Oír</button>
+    <button class="mab" onclick="guardarMem(this,${JSON.stringify(txt)})">★ Guardar</button>
+  </div>`:'';
+  d.innerHTML=`<div class="av">${escH(av)}</div><div class="mc"><div class="mn">${escH(nm)}</div><div class="mb">${tagH}${renderMd(txt)}${imgH}</div>${actsHTML}</div>`;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function copiarMsg(btn,txt){ navigator.clipboard.writeText(txt).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent='📋 Copiar'; btn.classList.remove('ok'); },2000); }).catch(()=>toast('No se pudo copiar')); }
+function oir(txt){ speak(txt); }
+function guardarMem(btn,txt){ memGuardar('guardado',txt); guardarTodo(); btn.textContent='✓ Guardado'; btn.classList.add('saved'); setTimeout(()=>{ btn.textContent='★ Guardar'; btn.classList.remove('saved'); },2000); toast('★ Guardado en memoria'); }
+function mostrarThink(){ const chat=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg leonor'; d.id='think'; d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor</div><div class="mb"><div class="think-b"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; }
+function quitarThink(){ const e=document.getElementById('think'); if(e) e.remove(); }
+
+// ═══ ENVIAR ═══
+async function enviar(){
+  if(enviando) return;
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt&&!pendImg) return;
+  if(txt.startsWith('/')&&!pendImg){ if(procesarSlash(txt)){ addMsg('user',txt); inp.value=''; inp.style.height='auto'; return; } }
+  if(!cfg.key){ toast('⚙ Pon tu API Key primero'); openCfg(); return; }
+
+  // Modo BUFFER
+  if(modeBuf&&!pendImg){ addMsg('user',txt); agregarAlBuffer(txt); inp.value=''; inp.style.height='auto'; return; }
+
+  enviando=true; document.getElementById('sbtn').disabled=true;
+  inp.value=''; inp.style.height='auto';
+  const imgSnap=pendImg; pendImg=null;
+
+  // Modo ARCHIVAR inmediato
+  if(modeArch&&!imgSnap){
+    addMsg('user',txt); mostrarThink();
+    try{
+      const {resumen,vinculos,nivelInfo}=await archivarInmediato(nivelActivo,txt);
+      quitarThink();
+      let msgF=`📥 **Archivado en ${nivelInfo.icon} ${nivelInfo.label}**\n\n${resumen}`;
+      if(vinculos.length) msgF+=`\n\n🔗 **Conexiones:**\n${vinculos.map(v=>'• '+v).join('\n')}`;
+      addMsg('leonor',msgF,null,`${nivelInfo.icon} ${nivelInfo.label}`);
+      toast(`✓ Archivado en ${nivelInfo.label}`); setStatus('Listo · Memoria activa','green');
+    }catch(e){ quitarThink(); addMsg('leonor',`⚠ Error archivando: ${e.message}`); setStatus('Error','red'); }
+    finally{ enviando=false; document.getElementById('sbtn').disabled=false; }
+    return;
+  }
+
+  // Modo CONSULTAR
+  let bibCtxExtra='';
+  if(modeCons&&!imgSnap){
+    const ctx=await consultarBiblioteca(nivelActivo);
+    const nivelInfo=NIVELES.find(n=>n.id===nivelActivo);
+    if(ctx){ bibCtxExtra=`\n\n=== BIBLIOTECA · ${nivelInfo.label.toUpperCase()} ===\n${ctx}\n===`; toast(`🔍 Consultando ${nivelInfo.label}…`); }
+    else toast(`📚 ${nivelInfo.label} vacía`);
+  }
+
+  const msgTxt=txt||(imgSnap?'[Foto enviada]':'');
+  addMsg('user',txt||(imgSnap?'[Foto]':''),imgSnap);
+  hist.push({r:'user',t:msgTxt});
+  setStatus('Leonor está pensando…','amber'); mostrarThink();
+  if(navigator.vibrate) navigator.vibrate(15);
+
+  try{
+    const resp=await llamarGemini(txt,imgSnap,bibCtxExtra);
+    quitarThink();
+    const nivelTag=modeCons?`${NIVELES.find(n=>n.id===nivelActivo)?.icon} ${NIVELES.find(n=>n.id===nivelActivo)?.label}`:null;
+    addMsg('leonor',resp,null,nivelTag);
+    hist.push({r:'leonor',t:resp});
+    if(txt.length>15) memGuardar('dialogo',txt);
+    if(tts) speak(resp);
+    setStatus('Listo · Memoria activa','green'); guardarTodo();
+  }catch(e){ quitarThink(); addMsg('leonor',`⚠ **Error:** ${e.message}\n\nRevisa tu API Key o cambia de modelo en ⚙`); setStatus('Error de conexión','red'); }
+  finally{ enviando=false; document.getElementById('sbtn').disabled=false; }
+}
+
+// ═══ GEMINI API ═══
+async function llamarGemini(txt,imgB64=null,bibCtxExtra=''){
+  const memCtx=memBuscar(txt,3),famCtx=buscarFamilia(txt);
+  const system=`${cfg.alma}\n\nCONTEXTO ACTUAL:\n${cfg.ctx||'Sin configurar.'}\n\nMEMORIA RELEVANTE:\n${memCtx||'Sin recuerdos previos.'}${bibCtxExtra}\n\nSALUD:\nPeso: ${cfg.salud.peso||'-'} kg | Meta: ${cfg.salud.meta||'-'} kg\nGlucosa: ${cfg.salud.gluc||'-'} | Presión: ${cfg.salud.pres||'-'}\nCalorías hoy: ${cfg.salud.calHoy||'0'} / ${cfg.salud.calobj||'1800'}\n${cfg.salud.notas||''}\n\nFAMILIA:\n${famCtx||cfg.familia.otros||'Sin datos.'}\n\nEres Leonor. Responde en español de México, cálida y útil.${cfg.rsp==='corto'?' Máximo 3 líneas.':cfg.rsp==='profundo'?' Sé detallada y reflexiva.':''}`;
+  const contents=[];
+  for(const h of hist.slice(-10)) contents.push({role:h.r==='leonor'?'model':'user',parts:[{text:h.t}]});
+  const partsActual=[];
+  if(imgB64) partsActual.push({inlineData:{mimeType:'image/jpeg',data:imgB64}});
+  partsActual.push({text:txt||'Analiza esta imagen.'});
+  contents.push({role:'user',parts:partsActual});
+  const modelId=MODEL_IDS[imgB64?cfg.imgModelo:cfg.modelo]||cfg.modelo;
+  const maxT=cfg.rsp==='corto'?300:cfg.rsp==='profundo'?1800:900;
+  const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents,generationConfig:{maxOutputTokens:maxT,temperature:0.85}})});
+  if(!r.ok){ const err=await r.json().catch(()=>({})); const msg=err?.error?.message||`HTTP ${r.status}`; if(r.status===429) throw new Error('Límite de cuota. Cambia de modelo en ⚙'); if(r.status===404) throw new Error('Modelo no encontrado. Prueba Gemini 2.5 Flash en ⚙'); throw new Error(msg); }
+  const data=await r.json();
+  const cand=data.candidates?.[0];
+  if(!cand) throw new Error('Sin respuesta. Intenta de nuevo.');
+  if(cand.finishReason==='SAFETY') throw new Error('Respuesta bloqueada por filtro de seguridad.');
+  return cand.content.parts.map(p=>p.text||'').join('').trim();
+}
+async function llamarGeminiDirecto(prompt,maxTokens=600){
+  const modelId=MODEL_IDS[cfg.modelo]||cfg.modelo;
+  const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxTokens,temperature:0.5}})});
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data=await r.json();
+  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim()||'';
+}
+
+// ═══ MEMORIA VECTORIAL ═══
+function embed(t){ return t.toLowerCase().split(/\s+/).map(w=>{ let h=5381; for(let i=0;i<w.length;i++) h=((h<<5)+h)^w.charCodeAt(i); return Math.abs(h)%1000; }); }
+function cosim(a,b){ const n=Math.min(a.length,b.length); if(!n) return 0; let d=0,na=0,nb=0; for(let i=0;i<n;i++){d+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];} return d/(Math.sqrt(na)*Math.sqrt(nb)+1e-9); }
+function memGuardar(tipo,txt){ if(!txt||txt.length<12) return; if(mem.length&&mem[0].txt===txt) return; mem.unshift({tipo,txt,vec:embed(txt),f:new Date().toISOString()}); if(mem.length>400) mem=mem.slice(0,400); }
+function memBuscar(q,k=3){ if(!mem.length) return ''; const qv=embed(q); return [...mem].map(r=>({s:cosim(qv,r.vec),r})).sort((a,b)=>b.s-a.s).slice(0,k).map(x=>x.r.txt).join('\n'); }
+function buscarFamilia(t){ const tl=t.toLowerCase(); if(tl.includes('mamá')||tl.includes('mama')) return 'Mamá: '+cfg.familia.mama; if(tl.includes('eli')) return 'Eli: '+cfg.familia.eli; if(tl.includes('pepe')) return 'Pepe: '+cfg.familia.pepe; return ''; }
+
+// ═══ FOTO ═══
+function handleFoto(inp){ const f=inp.files[0]; if(!f) return; if(f.size>12*1024*1024){ toast('Foto muy grande (máx 12MB)'); inp.value=''; return; } const r=new FileReader(); r.onload=e=>{ pendImg=e.target.result.split(',')[1]; document.getElementById('inp').value='Analiza esta imagen...'; toast('📷 Foto lista · Toca ➤'); if(navigator.vibrate) navigator.vibrate(25); }; r.readAsDataURL(f); inp.value=''; }
+
+// ═══ FINALIZAR ═══
+async function finalizar(){
+  if(!cfg.key||hist.length<2){ toast('Sin conversación suficiente'); return; }
+  if(!confirm('¿Guardar sesión en el diario de Leonor?')) return;
+  setStatus('Guardando sesión…','amber');
+  try{
+    const resumen=await llamarGeminiDirecto('Escribe una entrada de diario breve (3-5 oraciones) desde la perspectiva de Leonor sobre esta conversación:\n'+hist.slice(-14).map(h=>(h.r==='user'?'Héctor: ':'Leonor: ')+h.t).join('\n'),400);
+    memGuardar('diario',resumen);
+    let diar=[]; try{ diar=(await dbGet('diario'))||[]; }catch(e){}
+    diar.unshift({f:new Date().toISOString(),e:resumen});
+    await dbSet('diario',diar.slice(0,60));
+    if(!bibData['diario']) bibData['diario']=[];
+    bibData['diario'].unshift({resumen,fecha:new Date().toISOString(),vinculos:[]});
+    if(bibData['diario'].length>30) bibData['diario']=bibData['diario'].slice(0,30);
+    hist=[]; await guardarTodo();
+    addMsg('leonor','🌙 Sesión guardada en diario.\n\n'+resumen);
+    setStatus('Descansando · Hasta pronto','green'); toast('🌙 Diario guardado');
+  }catch(e){ toast('Error al guardar: '+e.message); setStatus('Listo · Memoria activa','green'); }
+}
+
+// ═══ GENERAR IMAGEN ═══
+function openGenImg(){ document.getElementById('ov-img').classList.add('open'); }
+function closeGenImg(){ document.getElementById('ov-img').classList.remove('open'); }
+async function generarImagen(){
+  if(!cfg.key){ toast('⚙ Necesitas tu API Key'); return; }
+  const promptBase=document.getElementById('img-prompt').value.trim();
+  if(!promptBase){ toast('Describe la imagen primero'); return; }
+  const estilo=document.getElementById('img-estilo').value;
+  const prompt=promptBase+(estilo?`, ${estilo}`:'');
+  const btn=document.getElementById('gen-img-btn');
+  btn.disabled=true; btn.textContent='⏳ Generando…';
+  closeGenImg(); setStatus('Generando imagen…','amber'); addMsg('user',`🍌 Crear imagen: "${promptBase}"`);
+  try{
+    const modelId=MODEL_IDS[cfg.imgModelo]||'gemini-2.5-flash-image';
+    const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
+    if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||`HTTP ${r.status}`); }
+    const data=await r.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    const imgPart=parts.find(p=>p.inlineData?.mimeType?.startsWith('image'));
+    const textPart=parts.find(p=>p.text);
+    if(imgPart){
+      const imgData=imgPart.inlineData.data,imgMime=imgPart.inlineData.mimeType;
+      const chat=document.getElementById('chat');
+      const d=document.createElement('div'); d.className='msg leonor';
+      d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor · Imagen 🍌</div><div class="mb">${textPart?renderMd(textPart.text)+'<br>':''}<img src="data:${imgMime};base64,${imgData}" alt="imagen generada" loading="lazy" style="max-width:100%;border-radius:10px;margin-top:6px;display:block"><div class="msg-acts" style="margin-top:8px"><button class="mab">⬇ Descargar</button></div></div></div>`;
+      d.querySelector('.mab').addEventListener('click',()=>{ const a=document.createElement('a'); a.href=`data:${imgMime};base64,${imgData}`; a.download=`leonor_${Date.now()}.png`; a.click(); toast('⬇ Imagen descargada'); });
+      chat.appendChild(d); chat.scrollTop=chat.scrollHeight; setStatus('Listo · Imagen generada ✓','green');
+    } else if(textPart){ addMsg('leonor',textPart.text); setStatus('Listo · Memoria activa','green'); }
+    else throw new Error('No se recibió imagen. Intenta con otra descripción.');
+  }catch(e){ addMsg('leonor',`⚠ **Error generando imagen:** ${e.message}`); setStatus('Error','red'); }
+  finally{ btn.disabled=false; btn.textContent='🍌 Generar imagen'; }
+}
+
+// ═══ CONFIG UI ═══
+function openCfg(){
+  const f=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  f('c-key',cfg.key); f('c-nom',cfg.nombre); f('c-mod',cfg.modelo); f('c-imgmod',cfg.imgModelo); f('c-rsp',cfg.rsp);
+  f('c-alma',cfg.alma); f('c-ctx',cfg.ctx); f('c-peso',cfg.salud.peso); f('c-meta',cfg.salud.meta);
+  f('c-gluc',cfg.salud.gluc); f('c-pres',cfg.salud.pres); f('c-calobj',cfg.salud.calobj); f('c-snot',cfg.salud.notas);
+  f('c-mama',cfg.familia.mama); f('c-eli',cfg.familia.eli); f('c-pepe',cfg.familia.pepe); f('c-otros',cfg.familia.otros);
+  document.getElementById('ov-cfg').classList.add('open');
+}
+function closeCfg(){ document.getElementById('ov-cfg').classList.remove('open'); }
+async function guardarCfg(){
+  const g=id=>(document.getElementById(id)?.value||'').trim();
+  if(!g('c-key')){ toast('⚠ La API Key no puede estar vacía'); return; }
+  cfg.key=g('c-key'); cfg.nombre=g('c-nom')||'Héctor';
+  cfg.modelo=document.getElementById('c-mod').value; cfg.imgModelo=document.getElementById('c-imgmod').value;
+  cfg.rsp=document.getElementById('c-rsp').value; cfg.alma=g('c-alma'); cfg.ctx=g('c-ctx');
+  cfg.salud={peso:g('c-peso'),meta:g('c-meta'),gluc:g('c-gluc'),pres:g('c-pres'),notas:g('c-snot'),calobj:g('c-calobj'),calHoy:cfg.salud.calHoy};
+  cfg.familia={mama:g('c-mama'),eli:g('c-eli'),pepe:g('c-pepe'),otros:g('c-otros')};
+  await guardarTodo(); actualizarBadge(); actualizarDashboard(); closeCfg(); toast('✓ Guardado');
+  if(navigator.vibrate) navigator.vibrate([25,25,25]);
+}
+function showTab(id,btn){ ['api','alma','ctx','salud','fam','sync'].forEach(t=>{ const el=document.getElementById('t-'+t); if(el) el.style.display=t===id?'block':'none'; }); document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+
+// ═══ MEMORIA UI ═══
+function openMem(){
+  document.getElementById('mem-stats').textContent=`${mem.length} recuerdos · IndexedDB permanente`;
+  const list=document.getElementById('mem-list');
+  list.innerHTML=!mem.length?'<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">Sin recuerdos aún</p>':mem.slice(0,40).map(m=>`<div class="mit"><div class="mm">${escH(m.tipo)} · ${new Date(m.f).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'})}</div>${escH(m.txt)}</div>`).join('');
+  document.getElementById('ov-mem').classList.add('open');
+}
+function closeMem(){ document.getElementById('ov-mem').classList.remove('open'); }
+async function limpiarMem(){ if(!confirm('¿Borrar toda la memoria?')) return; mem=[]; await guardarTodo(); closeMem(); toast('🗑 Memoria limpiada'); }
+
+// ═══ BIBLIOTECA UI ═══
+function openBib(){
+  const list=document.getElementById('bib-list');
+  const total=Object.values(bibData).reduce((s,a)=>s+(a?.length||0),0);
+  if(!total){ list.innerHTML='<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">Biblioteca vacía · Usa 📋 Buffer o 📥 Archivar</p>'; }
+  else{ list.innerHTML=NIVELES.map(n=>{ const entradas=bibData[n.id]||[]; if(!entradas.length) return ''; const ent=entradas[0]; const prev=ent.resumen?.substring(0,100)||''; const vinH=ent.vinculos?.length?`<div class="rel-section"><div class="rel-label">🔗 CONEXIONES</div>${ent.vinculos.map(v=>`<div class="link-tag">${escH(v.substring(0,60))}</div>`).join('')}</div>`:''; return `<div class="bib-item"><div class="bib-hdr"><span class="bib-name">${n.icon} ${n.label}</span><span class="bib-cnt">${entradas.length} entrada${entradas.length>1?'s':''}</span></div><div class="bib-prev">${escH(prev)}${prev.length>=100?'…':''}</div>${vinH}</div>`; }).join(''); }
+  document.getElementById('ov-bib').classList.add('open');
+}
+function closeBib(){ document.getElementById('ov-bib').classList.remove('open'); }
+async function limpiarBib(){ if(!confirm('¿Vaciar toda la Biblioteca?')) return; bibData={}; await guardarTodo(); closeBib(); toast('🗑 Biblioteca vaciada'); }
+
+// ═══ EXPORT / IMPORT ═══
+async function exportarDatos(){
+  let diar=[]; try{ diar=(await dbGet('diario'))||[]; }catch(e){}
+  const data={version:9,app:'Leonor-Gemini',exportado:new Date().toISOString(),cfg:{...cfg,key:'[PON_TU_KEY_AQUÍ]'},mem,diar,bibData};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`leonor_v9_${new Date().toISOString().split('T')[0]}.json`; a.click(); toast('📤 Exportado');
+}
+async function importarDatos(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=async e=>{ try{ const d=JSON.parse(e.target.result); if(d.cfg) cfg={...CFG_DEF,...d.cfg,salud:{...CFG_DEF.salud,...d.cfg.salud},familia:{...CFG_DEF.familia,...d.cfg.familia}}; if(d.mem) mem=d.mem; if(d.bibData) bibData=d.bibData; if(d.diar) await dbSet('diario',d.diar); await guardarTodo(); actualizarBadge(); actualizarDashboard(); toast('✓ Importado. Pon tu API Key en ⚙'); }catch(err){ toast('Error importando: '+err.message); } }; r.readAsText(f);
+}
+
+// ═══ HELPERS ═══
+function setStatus(t,c){ document.getElementById('stxt').textContent=t; document.getElementById('sdot').style.background=c==='green'?'var(--green)':c==='amber'?'var(--amber)':'var(--red)'; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._tid); t._tid=setTimeout(()=>t.classList.remove('show'),3000); }
+</script>
+</body>
+</html>
