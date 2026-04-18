@@ -1,11 +1,11 @@
 // Leonor v7 — Service Worker
 // Permite funcionamiento offline y caché inteligente
 
-const CACHE = 'leonor-v7';
+const CACHE = 'leonor-v11';
 const ASSETS = [
-  '/Leonor_index/',
-  '/Leonor_index/index.html',
-  '/Leonor_index/manifest.json',
+  '/',
+  '/index.html',
+  '/manifest.json',
 ];
 
 // Instalar: cachear archivos base
