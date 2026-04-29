@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Leonor">
+<meta name="theme-color" content="#0f1a14">
+<title>Leonor v14r2 · Gemini</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<noscript><p style="padding:20px;color:#6fcf97;background:#0f1a14;font-family:serif">Leonor necesita JavaScript activado.</p></noscript>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   LEONOR v14r — abril 2026
+   3 fixes de confiabilidad sobre v14:
+   A) Drive OAuth con timeout 60s + limpieza de token
+   B) IndexedDB con errores visibles (cuota, Safari privado)
+   C) Micropaso con timer 2min + botón Saltar explícito
+   ═══════════════════════════════════════ */
+:root{
+  --ink:#0f1a14;--paper:#e8f5ee;--warm:#6fcf97;--amber:#27ae60;
+  --soft:#7daa8e;--green:#4caf79;--red:#e05555;
+  --bubble:#152219;--panel:#111e17;--orange:#e07a27;--purple:#9b59b6;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--ink);color:var(--paper);
+  display:flex;flex-direction:column;height:100dvh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.35;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E")}
+
+/* HEADER */
+.hdr{padding:10px 14px 8px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(111,207,151,.14);background:rgba(15,26,20,.99);flex-shrink:0;z-index:10}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--warm),var(--amber));
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink);font-weight:500;
+  flex-shrink:0;box-shadow:0 2px 12px rgba(111,207,151,.25)}
+.hdr-title{font-size:14px;font-weight:400;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.mbadge{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:20px;
+  background:rgba(111,207,151,.12);color:var(--warm);border:1px solid rgba(111,207,151,.22);letter-spacing:.04em}
+.hdr-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);letter-spacing:.07em}
+.hdr-r{display:flex;gap:5px}
+.ico{width:32px;height:32px;border:none;border-radius:8px;background:rgba(111,207,151,.07);
+  color:var(--warm);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.ico:active{background:rgba(111,207,151,.2);transform:scale(.91)}
+
+/* HEALTH DASHBOARD */
+.health-dash{padding:6px 14px 7px;background:rgba(15,26,20,.97);border-bottom:1px solid rgba(111,207,151,.1);flex-shrink:0}
+.health-row{display:flex;align-items:center;gap:8px}
+.health-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.06em;white-space:nowrap;flex-shrink:0}
+.health-bar-wrap{flex:1;height:5px;background:rgba(111,207,151,.1);border-radius:10px;overflow:hidden}
+.health-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--amber),var(--warm));transition:width .6s ease;min-width:2px}
+.health-stats{display:flex;gap:10px;flex-shrink:0}
+.hstat{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.04em}
+.hstat span{color:var(--warm)}
+
+/* SANDBOX BANNER — nuevo v13 */
+#sandbox-banner{display:none;padding:6px 14px;background:rgba(224,122,39,.1);
+  border-bottom:1px solid rgba(224,122,39,.3);align-items:center;justify-content:space-between;flex-shrink:0}
+#sandbox-banner.show{display:flex}
+#sandbox-banner span{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:.04em}
+#sandbox-banner button{padding:3px 10px;background:rgba(224,122,39,.15);border:1px solid rgba(224,122,39,.35);
+  border-radius:20px;color:var(--orange);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer}
+
+/* CHAT */
+.chat{flex:1;overflow-y:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:11px;
+  scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:8px;animation:fu .28s ease}
+@keyframes fu{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.msg.leonor .av{background:linear-gradient(135deg,var(--warm),var(--amber));color:var(--ink)}
+.msg.user .av{background:rgba(111,207,151,.1);border:1px solid rgba(111,207,151,.24);color:var(--warm);font-family:'DM Mono',monospace;font-size:10px}
+.mc{max-width:83%;display:flex;flex-direction:column;gap:2px}
+.mn{font-size:9px;font-family:'DM Mono',monospace;color:var(--soft);letter-spacing:.06em;text-transform:uppercase;padding:0 2px}
+.msg.user .mn{text-align:right}
+.mb{padding:10px 13px;border-radius:14px;font-size:15px;line-height:1.6;font-weight:300}
+.msg.leonor .mb{background:var(--bubble);border:1px solid rgba(111,207,151,.12);border-bottom-left-radius:3px;color:var(--paper)}
+.msg.user .mb{background:rgba(111,207,151,.13);border:1px solid rgba(111,207,151,.2);border-bottom-right-radius:3px;text-align:right}
+.mb img{max-width:100%;border-radius:7px;margin-top:6px;display:block}
+.bib-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;
+  margin-bottom:5px;background:rgba(111,207,151,.1);color:var(--warm);border:1px solid rgba(111,207,151,.2)}
+.link-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;
+  margin:2px 2px 0 0;background:rgba(39,174,96,.08);color:var(--amber);border:1px solid rgba(39,174,96,.2)}
+.tema-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:10px;
+  margin-bottom:5px;background:rgba(155,89,182,.1);color:var(--purple);border:1px solid rgba(155,89,182,.25)}
+/* Modo micropaso — borde azul en mensajes */
+.msg.leonor.micropaso .mb{border-color:rgba(52,152,219,.35);background:#141e2a}
+.mb b,.mb strong{font-weight:600;color:#a8e6c0}
+.mb em,.mb i{font-style:italic;color:#c8f0da}
+.mb code{font-family:'DM Mono',monospace;font-size:12px;background:rgba(111,207,151,.1);padding:1px 5px;border-radius:4px;color:#6fcf97}
+.mb pre{background:rgba(0,0,0,.3);border:1px solid rgba(111,207,151,.15);border-radius:8px;padding:10px;margin:6px 0;overflow-x:auto}
+.mb pre code{background:none;padding:0;font-size:12px}
+.mb ul,.mb ol{padding-left:18px;margin:4px 0}
+.mb li{margin:2px 0}
+.mb hr{border:none;border-top:1px solid rgba(111,207,151,.15);margin:8px 0}
+.msg-acts{display:flex;gap:5px;margin-top:3px;padding:0 2px;flex-wrap:wrap}
+.mab{padding:3px 9px;background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.13);
+  border-radius:20px;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;transition:.15s;-webkit-appearance:none;letter-spacing:.03em}
+.mab:active{background:rgba(111,207,151,.2);color:var(--warm)}
+.mab.ok{color:var(--green);border-color:rgba(76,175,121,.3)}
+.mab.saved{color:var(--amber);border-color:rgba(39,174,96,.35)}
+.mab.sig{color:#3498db;border-color:rgba(52,152,219,.35);background:rgba(52,152,219,.07)}
+
+/* THINKING */
+.think-b{display:flex;align-items:center;gap:4px;padding:10px 13px}
+.dot{width:5px;height:5px;background:var(--warm);border-radius:50%;opacity:.35;animation:pd 1.2s infinite}
+.dot:nth-child(2){animation-delay:.22s}.dot:nth-child(3){animation-delay:.44s}
+@keyframes pd{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.45);opacity:1}}
+
+/* STATUS */
+.sbar{padding:4px 13px;display:flex;align-items:center;gap:6px;background:rgba(15,26,20,.99);flex-shrink:0}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:bl 3s infinite;flex-shrink:0}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.stxt{font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);letter-spacing:.05em}
+
+/* CONTROL BAR */
+.ctrl-bar{background:rgba(15,26,20,.98);border-top:1px solid rgba(111,207,151,.1);
+  overflow:hidden;max-height:0;transition:max-height .28s ease;flex-shrink:0}
+/* FIX v13.1: max-height subida a 220px para incluir fila de energía sin cortes */
+.ctrl-bar.open{max-height:220px}
+.ctrl-inner{padding:8px 12px}
+.bib-scroll{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.bib-scroll::-webkit-scrollbar{display:none}
+.bchip{padding:3px 10px;border:1px solid rgba(111,207,151,.16);border-radius:20px;
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0;-webkit-appearance:none}
+.bchip.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.ctrl-toggles{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.ctog{flex:1;min-width:0;padding:5px 3px;border-radius:9px;border:1px solid rgba(111,207,151,.15);
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:8px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;
+  transition:.15s;-webkit-appearance:none;letter-spacing:.02em;white-space:nowrap}
+.ctog.on-arch{background:rgba(111,207,151,.1);border-color:var(--warm);color:var(--warm)}
+.ctog.on-cons{background:rgba(39,174,96,.1);border-color:var(--amber);color:var(--amber)}
+.ctog.on-buf{background:rgba(224,122,39,.1);border-color:var(--orange);color:var(--orange)}
+/* Modos de Energía — v13 */
+.energy-row{display:flex;gap:5px;margin-top:5px}
+.ebtn{flex:1;padding:5px 2px;border-radius:9px;border:1px solid rgba(111,207,151,.12);
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:8px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;
+  transition:.15s;-webkit-appearance:none;white-space:nowrap}
+.ebtn.on-micro{background:rgba(52,152,219,.1);border-color:#3498db;color:#3498db}
+.ebtn.on-vuelo{background:rgba(231,76,60,.1);border-color:#e74c3c;color:#e74c3c}
+.ebtn.on-normal{background:rgba(111,207,151,.1);border-color:var(--warm);color:var(--warm)}
+.ctrl-mode-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--soft);letter-spacing:.05em;padding:0 2px;margin-top:3px;display:block}
+
+/* BUFFER PANEL */
+/* FIX v14: buf-panel fuera del ctrl-bar — necesita z-index y overflow-y propio
+   para que en pantallas pequeñas sea scrolleable y no tape el #inp */
+.buf-panel{background:rgba(15,26,20,.99);border-top:1px solid rgba(224,122,39,.25);
+  flex-shrink:0;overflow:hidden;max-height:0;transition:max-height .3s ease;
+  position:relative;z-index:5}
+.buf-panel.open{max-height:260px;overflow-y:auto}
+.buf-inner{padding:10px 14px 12px}
+.buf-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.buf-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:.06em}
+.buf-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft)}
+.buf-preview{font-size:12px;color:var(--soft);line-height:1.5;max-height:80px;
+  overflow-y:auto;border:1px solid rgba(224,122,39,.15);border-radius:8px;
+  padding:7px 10px;background:rgba(224,122,39,.04);white-space:pre-wrap;word-break:break-word}
+.buf-preview::-webkit-scrollbar{display:none}
+/* Commit box — v13: Héctor escribe su propio resumen */
+.buf-commit-area{margin-top:7px}
+.buf-commit-area label{font-family:'DM Mono',monospace;font-size:9px;color:var(--orange);letter-spacing:.06em;display:block;margin-bottom:4px}
+.buf-commit-area textarea{width:100%;background:rgba(224,122,39,.04);border:1px solid rgba(224,122,39,.2);
+  border-radius:8px;color:var(--paper);font-family:'Cormorant Garamond',serif;font-size:13px;
+  padding:7px 10px;outline:none;resize:none;min-height:50px;-webkit-appearance:none}
+.buf-actions{display:flex;gap:6px;margin-top:6px}
+.buf-btn{flex:1;padding:7px;border-radius:9px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s;border:1px solid;-webkit-appearance:none}
+.buf-btn.commit{background:rgba(224,122,39,.12);border-color:var(--orange);color:var(--orange)}
+.buf-btn.commit:active{background:rgba(224,122,39,.25)}
+.buf-btn.discard{background:transparent;border-color:rgba(220,80,80,.25);color:var(--red)}
+
+/* BOTTOM BAR */
+.bbar{padding:9px 12px 20px;background:rgba(15,26,20,.99);border-top:1px solid rgba(111,207,151,.11);flex-shrink:0}
+.irow{display:flex;align-items:flex-end;gap:7px;margin-bottom:8px}
+.iwrap{flex:1;position:relative}
+#inp{width:100%;background:rgba(232,245,238,.05);border:1px solid rgba(111,207,151,.18);
+  border-radius:22px;color:var(--paper);font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:300;padding:11px 42px 11px 15px;
+  outline:none;-webkit-appearance:none;resize:none;max-height:110px;line-height:1.4;overflow-y:auto;transition:border-color .2s}
+#inp:focus{border-color:rgba(111,207,151,.42)}
+#inp::placeholder{color:var(--soft);opacity:.5}
+#inp.mode-arch{border-color:rgba(111,207,151,.5)!important;background:rgba(111,207,151,.04)}
+#inp.mode-cons{border-color:rgba(39,174,96,.5)!important;background:rgba(39,174,96,.03)}
+#inp.mode-buf{border-color:rgba(224,122,39,.5)!important;background:rgba(224,122,39,.03)}
+#inp.mode-micro{border-color:rgba(52,152,219,.4)!important;background:rgba(52,152,219,.03)}
+#inp.mode-vuelo{border-color:rgba(231,76,60,.4)!important;background:rgba(231,76,60,.02)}
+.sbtn{position:absolute;right:5px;bottom:5px;width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--warm),var(--amber));border:none;color:var(--ink);font-size:13px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.sbtn:active{transform:scale(.87)}
+.sbtn:disabled{opacity:.35;pointer-events:none}
+.sbtn.mode-arch{background:linear-gradient(135deg,#6fcf97,#4caf79)}
+.sbtn.mode-cons{background:linear-gradient(135deg,#27ae60,#1e8449)}
+.sbtn.mode-buf{background:linear-gradient(135deg,var(--orange),#c0641a)}
+.sbtn.mode-micro{background:linear-gradient(135deg,#3498db,#2980b9)}
+.sbtn.mode-vuelo{background:linear-gradient(135deg,#e74c3c,#c0392b)}
+.bacts{display:flex;justify-content:space-around;gap:5px}
+.abtn{flex:1;padding:7px 1px;background:rgba(111,207,151,.07);border:1px solid rgba(111,207,151,.15);
+  border-radius:11px;color:var(--warm);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.02em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;-webkit-appearance:none}
+.abtn:active{background:rgba(111,207,151,.18);transform:scale(.93)}
+.abtn span{font-size:15px}
+.abtn.on{border-color:rgba(76,175,121,.45);color:var(--green);background:rgba(76,175,121,.07)}
+.abtn.rec{border-color:rgba(220,80,80,.45);color:var(--red);background:rgba(220,80,80,.07)}
+
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(15,26,20,.9);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(5px)}
+.overlay.open{display:flex}
+.panel{background:var(--panel);border-top:1px solid rgba(111,207,151,.17);border-radius:20px 20px 0 0;
+  padding:20px 17px 44px;width:100%;max-height:85dvh;overflow-y:auto}
+.panel h2{font-size:17px;font-weight:400;color:var(--warm);margin-bottom:15px}
+.tabrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:15px}
+.tb{padding:5px 11px;border:1px solid rgba(111,207,151,.18);border-radius:20px;background:transparent;
+  color:var(--soft);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s;-webkit-appearance:none}
+.tb.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:10px;color:var(--soft);font-family:'DM Mono',monospace;letter-spacing:.07em;margin-bottom:5px;text-transform:uppercase}
+.fg input,.fg textarea,.fg select{width:100%;background:rgba(232,245,238,.05);border:1px solid rgba(111,207,151,.16);
+  border-radius:9px;color:var(--paper);font-family:'DM Mono',monospace;font-size:13px;padding:11px 12px;outline:none;-webkit-appearance:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus{border-color:var(--warm)}
+.fg textarea{font-family:'Cormorant Garamond',serif;font-size:14px;line-height:1.5;resize:vertical;min-height:70px}
+.fg select option{background:var(--panel)}
+.prim{width:100%;padding:13px;background:linear-gradient(135deg,var(--warm),var(--amber));border:none;
+  border-radius:11px;color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;
+  cursor:pointer;letter-spacing:.04em;transition:.15s;margin-top:5px}
+.prim:active{transform:scale(.97);opacity:.88}
+.sec{width:100%;padding:11px;margin-top:7px;background:transparent;border:1px solid rgba(111,207,151,.16);
+  border-radius:11px;color:var(--soft);font-family:'Cormorant Garamond',serif;font-size:15px;cursor:pointer}
+.divl{height:1px;background:rgba(111,207,151,.1);margin:12px 0}
+.stit{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}
+.mit{background:rgba(232,245,238,.03);border:1px solid rgba(111,207,151,.09);border-radius:9px;padding:10px;font-size:13px;line-height:1.5;margin-bottom:7px}
+.mit .mm{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:3px}
+.stat-entry{background:rgba(232,245,238,.02);border:1px solid rgba(111,207,151,.07);border-radius:7px;padding:7px 10px;margin-bottom:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--soft)}
+.stat-entry .sv{color:var(--warm)}
+.stat-entry .sd{color:rgba(111,207,151,.5);font-size:9px}
+.stat-trend{font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);margin-bottom:8px;padding:6px 10px;background:rgba(111,207,151,.03);border-radius:7px;border:1px solid rgba(111,207,151,.08)}
+.toast{position:fixed;bottom:118px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:#152219;border:1px solid rgba(111,207,151,.26);border-radius:10px;
+  padding:8px 17px;font-family:'DM Mono',monospace;font-size:11px;color:var(--warm);
+  opacity:0;transition:.22s;z-index:990;pointer-events:none;text-align:center;white-space:normal;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#file-inp{display:none}
+#pwa-banner{display:none;padding:8px 14px;background:rgba(111,207,151,.1);border-bottom:1px solid rgba(111,207,151,.2);
+  align-items:center;justify-content:space-between;flex-shrink:0}
+#pwa-banner.show{display:flex}
+#pwa-banner span{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm)}
+#pwa-banner button{padding:4px 12px;background:var(--warm);border:none;border-radius:20px;
+  color:var(--ink);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer}
+.bib-item{background:rgba(232,245,238,.03);border:1px solid rgba(111,207,151,.09);border-radius:9px;padding:10px;margin-bottom:7px}
+.bib-item .bib-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.bib-item .bib-name{font-family:'DM Mono',monospace;font-size:10px;color:var(--warm);font-weight:500}
+.bib-item .bib-cnt{font-family:'DM Mono',monospace;font-size:9px;color:var(--soft)}
+.bib-item .bib-prev{font-size:12px;color:var(--soft);line-height:1.4}
+.rel-section{margin-top:6px;padding-top:6px;border-top:1px solid rgba(111,207,151,.08)}
+.rel-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--soft);letter-spacing:.05em;margin-bottom:4px}
+/* Buscador en Biblioteca y Memoria — v14 */
+.search-box{width:100%;background:rgba(232,245,238,.05);border:1px solid rgba(111,207,151,.18);
+  border-radius:20px;color:var(--paper);font-family:'DM Mono',monospace;font-size:13px;
+  padding:8px 14px;outline:none;-webkit-appearance:none;margin-bottom:12px;transition:border-color .2s}
+.search-box:focus{border-color:var(--warm)}
+.search-box::placeholder{color:var(--soft);opacity:.6}
+.bib-filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.bib-fchip{padding:3px 9px;border:1px solid rgba(111,207,151,.14);border-radius:20px;
+  background:transparent;color:var(--soft);font-family:'DM Mono',monospace;font-size:9px;
+  cursor:pointer;white-space:nowrap;transition:.15s;-webkit-appearance:none}
+.bib-fchip.on{background:rgba(111,207,151,.12);border-color:var(--warm);color:var(--warm)}
+.bib-entry-full{background:rgba(232,245,238,.02);border:1px solid rgba(111,207,151,.07);
+  border-radius:8px;padding:9px 11px;margin-bottom:6px;font-size:12px;color:var(--soft);line-height:1.5}
+.bib-entry-full .bef-hdr{display:flex;justify-content:space-between;margin-bottom:4px}
+/* Micropaso — botón "siguiente" y "saltar" */
+.sig-btn-wrap{margin-top:8px;display:flex;justify-content:flex-start;gap:6px}
+.sig-btn{padding:6px 14px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.35);
+  border-radius:20px;color:#3498db;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s}
+.sig-btn:active{background:rgba(52,152,219,.2)}
+.skip-btn{padding:6px 12px;background:transparent;border:1px solid rgba(111,207,151,.18);
+  border-radius:20px;color:var(--soft);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:.15s}
+.skip-btn:active{background:rgba(111,207,151,.08);color:var(--warm)}
+</style>
+</head>
+<body>
+
+<div id="pwa-banner">
+  <span>📱 Instalar Leonor como app</span>
+  <button onclick="instalarPWA()">Instalar</button>
+</div>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">L</div>
+    <div>
+      <div class="hdr-title">Leonor v14r2 <span class="mbadge" id="mbadge">2.5 Flash</span></div>
+      <div class="hdr-sub">Google · Gemini</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <button class="ico" onclick="openEstadisticas()" title="Estadísticas de salud">📊</button>
+    <button class="ico" onclick="openBib()" title="Biblioteca">📚</button>
+    <button class="ico" onclick="openMem()" title="Memoria">🧠</button>
+    <button class="ico" onclick="recargar()" title="Sincronizar Drive">🔄</button>
+    <button class="ico" onclick="openCfg()" title="Configurar">⚙</button>
+    <button class="ico" onclick="finalizar()" title="Consolidación nocturna">🌙</button>
+  </div>
+</header>
+
+<div class="health-dash">
+  <div class="health-row">
+    <span class="health-label">PESO</span>
+    <div class="health-bar-wrap"><div class="health-bar-fill" id="health-fill" style="width:0%"></div></div>
+    <div class="health-stats">
+      <div class="hstat" id="hstat-peso"><span>–</span> kg</div>
+      <div class="hstat" id="hstat-cal">Cal: <span>–</span></div>
+      <div class="hstat" id="hstat-gluc">G: <span>–</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Sandbox banner — visible solo en modo Buffer v13 -->
+<div id="sandbox-banner">
+  <span>🟠 MODO SANDBOX — nada se guarda en memoria</span>
+  <button onclick="toggleBuf()">Salir</button>
+</div>
+
+<main class="chat" id="chat" aria-live="polite"></main>
+
+<div class="sbar"><div class="sdot" id="sdot"></div><span class="stxt" id="stxt">Iniciando…</span></div>
+
+<!-- CONTROL BAR -->
+<div class="ctrl-bar" id="ctrl-bar">
+  <div class="ctrl-inner">
+    <div class="bib-scroll" id="bib-chips"></div>
+    <div class="ctrl-toggles">
+      <button class="ctog" id="tog-buf"  onclick="toggleBuf()">📋 Buffer</button>
+      <button class="ctog" id="tog-cons" onclick="toggleCons()">🔍 Consultar</button>
+    </div>
+    <!-- Modos de Energía — nuevo v13 -->
+    <div class="energy-row">
+      <button class="ebtn" id="ebtn-micro" onclick="setEnergia('micro')" title="Una sola instrucción, espera confirmación">🐢 MICROPASO</button>
+      <button class="ebtn on-normal" id="ebtn-normal" onclick="setEnergia('normal')" title="Comportamiento normal">💬 NORMAL</button>
+      <button class="ebtn" id="ebtn-vuelo" onclick="setEnergia('vuelo')" title="Respuestas profundas y técnicas">🚀 VUELO</button>
+    </div>
+    <span class="ctrl-mode-lbl" id="ctrl-mode-lbl">💬 Conversación casual</span>
+  </div>
+</div>
+
+<!-- BUFFER PANEL v13 — con commit personalizado -->
+<div class="buf-panel" id="buf-panel">
+  <div class="buf-inner">
+    <div class="buf-header">
+      <span class="buf-title">📋 BUFFER EN CURSO · SANDBOX</span>
+      <span class="buf-count" id="buf-count">0 fragmentos</span>
+    </div>
+    <div class="buf-preview" id="buf-preview">— vacío —</div>
+    <div class="buf-actions">
+      <button class="buf-btn commit" onclick="commitBuffer()">✨ Destilar con Leonor</button>
+      <button class="buf-btn discard" onclick="descartarBuffer()">🗑 Descartar todo</button>
+    </div>
+  </div>
+</div>
+
+<footer class="bbar">
+  <div class="irow">
+    <button class="ico" style="flex-shrink:0" onclick="toggleCtrlBar()" title="Biblioteca">📂</button>
+    <div class="iwrap">
+      <textarea id="inp" placeholder="Habla con Leonor… (/peso 95 · /gluc 110 · /calorias 300)" rows="1"
+        oninput="resizeInp(this)" onkeydown="handleKey(event)"></textarea>
+      <button class="sbtn" id="sbtn" onclick="enviar()" aria-label="Enviar">➤</button>
+    </div>
+  </div>
+  <div class="bacts">
+    <button class="abtn" id="bmic" onclick="toggleMic()"><span>🎙</span>Hablar</button>
+    <button class="abtn" id="btts" onclick="toggleTTS()"><span>🔊</span>Escuchar</button>
+    <button class="abtn" onclick="document.getElementById('file-inp').click()"><span>🖼</span>Imagen</button>
+    <button class="abtn" onclick="openGenImg()"><span>🍌</span>Crear</button>
+    <button class="abtn" onclick="openCfg()"><span>📝</span>Alma</button>
+  </div>
+</footer>
+
+<input type="file" id="file-inp" accept="image/*" onchange="handleFoto(this)">
+<div class="toast" id="toast" role="alert"></div>
+
+<!-- CONFIG OVERLAY -->
+<div class="overlay" id="ov-cfg" onclick="if(event.target===this)closeCfg()">
+  <div class="panel">
+    <h2>⚙ Configurar Leonor</h2>
+    <div class="tabrow">
+      <button class="tb on" onclick="showTab('api',this)">API</button>
+      <button class="tb" onclick="showTab('alma',this)">Alma</button>
+      <button class="tb" onclick="showTab('ctx',this)">Contexto</button>
+      <button class="tb" onclick="showTab('salud',this)">Salud</button>
+      <button class="tb" onclick="showTab('fam',this)">Familia</button>
+      <button class="tb" onclick="showTab('sync',this)">Sync</button>
+    </div>
+    <div id="t-api">
+      <div class="fg"><label>API Key · Google AI Studio</label><input type="password" id="c-key" placeholder="AIzaSy…"></div>
+      <div class="fg"><label>Tu nombre</label><input type="text" id="c-nom" placeholder="Héctor"></div>
+      <div class="fg"><label>Modelo principal</label>
+        <select id="c-mod">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash ★ estable</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite · rápido</option>
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash · probado</option>
+          <option value="gemini-3-flash">Gemini 3 Flash 🆕</option>
+          <option value="gemini-3.1-pro">Gemini 3.1 Pro 🆕</option>
+        </select></div>
+      <div class="fg"><label>Modelo para imágenes</label>
+        <select id="c-imgmod">
+          <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image ★</option>
+          <option value="gemini-3.1-flash-image">Gemini 3.1 Flash Image 🆕</option>
+          <option value="gemini-3-pro-image">Gemini 3 Pro Image 🆕</option>
+        </select></div>
+      <div class="fg"><label>Modo de respuesta</label>
+        <select id="c-rsp">
+          <option value="normal">Normal</option>
+          <option value="corto">Breve (3 líneas)</option>
+          <option value="profundo">Profundo</option>
+        </select></div>
+    </div>
+    <div id="t-alma" style="display:none"><div class="fg"><label>Alma de Leonor</label><textarea id="c-alma" rows="6"></textarea></div></div>
+    <div id="t-ctx"  style="display:none"><div class="fg"><label>Contexto actual</label><textarea id="c-ctx" rows="5"></textarea></div></div>
+    <div id="t-salud" style="display:none">
+      <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:10px;line-height:1.7">
+        Los campos aquí actualizan el <b style="color:var(--warm)">estado de HOY</b>.<br>
+        Usa <code>/peso</code> y <code>/gluc</code> para registrar con fecha en Estadísticas.
+      </p>
+      <div class="fg"><label>Peso HOY (kg)</label><input type="text" id="c-peso" placeholder="95"></div>
+      <div class="fg"><label>Meta de peso (kg)</label><input type="text" id="c-meta" placeholder="85"></div>
+      <div class="fg"><label>Glucosa HOY (mg/dL)</label><input type="text" id="c-gluc" placeholder="110"></div>
+      <div class="fg"><label>Presión arterial</label><input type="text" id="c-pres" placeholder="120/80"></div>
+      <div class="fg"><label>Calorías objetivo / día</label><input type="text" id="c-calobj" placeholder="1800"></div>
+      <div class="fg"><label>Notas de salud (logros históricos · Alma)</label><textarea id="c-snot" rows="3" placeholder="Superó glucosa de 290. Bajó 10 kg en 2025…"></textarea></div>
+    </div>
+    <div id="t-fam" style="display:none">
+      <div class="fg"><label>Mamá</label><textarea id="c-mama" rows="3"></textarea></div>
+      <div class="fg"><label>Eli</label><textarea id="c-eli" rows="3"></textarea></div>
+      <div class="fg"><label>Pepe</label><textarea id="c-pepe" rows="3"></textarea></div>
+      <div class="fg"><label>Otros</label><textarea id="c-otros" rows="4"></textarea></div>
+    </div>
+    <div id="t-sync" style="display:none">
+      <button class="prim" onclick="exportarDatos()" style="background:rgba(111,207,151,.12);color:var(--warm);border:1px solid rgba(111,207,151,.24);margin-bottom:9px">📤 Exportar todo (JSON)</button>
+      <div class="fg"><label>Importar JSON</label><input type="file" id="c-imp" accept=".json" onchange="importarDatos(this)" style="font-size:11px;color:var(--soft);padding:10px"></div>
+      <div class="divl"></div>
+      <div class="stit">Instalar como app (PWA)</div>
+      <p style="font-size:12px;color:var(--soft);font-family:'DM Mono',monospace;line-height:2">1. Abre en <b style="color:var(--warm)">Chrome</b><br>2. Menú ⋮ → <b style="color:var(--warm)">"Añadir a pantalla de inicio"</b></p>
+    </div>
+    <div class="divl"></div>
+    <button class="prim" onclick="guardarCfg()">💾 Guardar configuración</button>
+    <button class="sec" onclick="closeCfg()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MEMORIA OVERLAY -->
+<div class="overlay" id="ov-mem" onclick="if(event.target===this)closeMem()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="margin:0">🧠 Memoria</h2><button class="ico" onclick="closeMem()">✕</button>
+    </div>
+    <!-- Buscador v14 -->
+    <input type="search" class="search-box" id="mem-search" placeholder="🔍 Buscar en memoria…" oninput="filtrarMem(this.value)">
+    <p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--soft);margin-bottom:10px" id="mem-stats"></p>
+    <div id="mem-list"></div>
+    <div class="divl"></div>
+    <button class="prim" onclick="limpiarMem()" style="background:rgba(220,80,80,.12);color:#e08080;border:1px solid rgba(220,80,80,.25)">🗑 Limpiar toda la memoria</button>
+  </div>
+</div>
+
+<!-- BIBLIOTECA OVERLAY -->
+<div class="overlay" id="ov-bib" onclick="if(event.target===this)closeBib()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="margin:0">📚 Biblioteca</h2><button class="ico" onclick="closeBib()">✕</button>
+    </div>
+    <!-- Buscador v14 -->
+    <input type="search" class="search-box" id="bib-search" placeholder="🔍 Buscar en biblioteca…" oninput="filtrarBib(this.value)">
+    <div class="bib-filter-row" id="bib-filter-row"></div>
+    <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);margin-bottom:10px" id="bib-count-lbl">11 niveles · Sin límite de entradas</p>
+    <div id="bib-list"></div>
+    <div class="divl"></div>
+    <button class="prim" onclick="limpiarBib()" style="background:rgba(220,80,80,.12);color:#e08080;border:1px solid rgba(220,80,80,.25)">🗑 Vaciar Biblioteca completa</button>
+  </div>
+</div>
+
+<!-- ESTADÍSTICAS OVERLAY — nuevo v13 -->
+<div class="overlay" id="ov-stats" onclick="if(event.target===this)closeEstadisticas()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">📊 Estadísticas</h2><button class="ico" onclick="closeEstadisticas()">✕</button>
+    </div>
+    <div id="stats-content"></div>
+    <div class="divl"></div>
+    <button class="sec" onclick="closeEstadisticas()">Cerrar</button>
+  </div>
+</div>
+
+<!-- IMAGEN OVERLAY -->
+<div class="overlay" id="ov-img" onclick="if(event.target===this)closeGenImg()">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">🍌 Crear imagen</h2><button class="ico" onclick="closeGenImg()">✕</button>
+    </div>
+    <div class="fg"><label>Descripción</label><textarea id="img-prompt" rows="4"></textarea></div>
+    <div class="fg"><label>Estilo</label>
+      <select id="img-estilo">
+        <option value="">Sin estilo</option>
+        <option value="fotorrealista, alta definición">Fotorrealista</option>
+        <option value="ilustración digital, vibrante">Ilustración digital</option>
+        <option value="pintura al óleo, artístico">Pintura artística</option>
+        <option value="minimalista, líneas limpias">Minimalista</option>
+        <option value="anime, estilo japonés">Anime</option>
+        <option value="boceto a lápiz, blanco y negro">Boceto a lápiz</option>
+      </select></div>
+    <button class="prim" id="gen-img-btn" onclick="generarImagen()">🍌 Generar imagen</button>
+    <button class="sec" onclick="closeGenImg()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════
+// LEONOR v14 — abril 2026
+// FIXES APLICADOS (10/10):
+//  🔴 Fix 1: commitBuffer — modeBuf baja ANTES de memGuardar (resumen ya se guarda)
+//  🔴 Fix 2: setEnergia — delega clases a actualizarModoUI, sin pisoteo doble-tap
+//  🔴 Fix 3: buf-panel — z-index + overflow-y:auto, no tapa el input
+//  🟡 Fix 4: statsHistorial — merge con defaults en DB y Drive (v13.1)
+//  🟡 Fix 5: fusionarRecuerdos — snapshot fijo, await correcto (v13.1)
+//  🟡 Fix 6: slash commands — trim antes de startsWith('/'), espacios iniciales OK
+//  🟡 Fix 7: Micropaso — esperandoConfMicro se resetea con cualquier mensaje libre
+//  🟡 Fix 8: Drive — fallo visible en status rojo + respaldo local SIEMPRE se descarga
+//  🟢 Fix 9: Buscador — Biblioteca (filtro carpeta + highlight) + Memoria (highlight)
+//  🟢 Fix 10: manifest.json + versión actualizada a v14
+// ═══════════════════════════════════════
+const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models';
+const EMBED_MODEL='text-embedding-004';
+
+// ═══ GOOGLE DRIVE SYNC ═══
+const DRIVE_CLIENT_ID='978808044182-rflqi2mpqmafeii8stiadafstpib37pi.apps.googleusercontent.com';
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_FILE='leonor_memoria.json';
+let driveToken=null;
+
+const MODEL_IDS={
+  'gemini-2.5-flash':'gemini-2.5-flash','gemini-2.5-flash-lite':'gemini-2.5-flash-lite',
+  'gemini-2.0-flash':'gemini-2.0-flash','gemini-3-flash':'gemini-3-flash',
+  'gemini-3.1-pro':'gemini-3.1-pro','gemini-2.5-flash-image':'gemini-2.5-flash-image',
+  'gemini-3.1-flash-image':'gemini-3.1-flash-image','gemini-3-pro-image':'gemini-3-pro-image',
+};
+const NOMBRES_BADGE={
+  'gemini-2.5-flash':'2.5 Flash','gemini-2.5-flash-lite':'2.5 Lite',
+  'gemini-2.0-flash':'2.0 Flash','gemini-3-flash':'3 Flash 🆕','gemini-3.1-pro':'3.1 Pro 🆕',
+};
+const MIGRAR={
+  'gemini-2.5-flash-preview-05-20':'gemini-2.5-flash','gemini-2.5-flash-lite-preview-06-17':'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-exp':'gemini-2.0-flash','gemini-2.0-flash-001':'gemini-2.0-flash',
+  'gemini-2.5-flash-preview-image-generation':'gemini-2.5-flash-image',
+  'gemini-3.1-flash-image-preview':'gemini-3.1-flash-image',
+};
+
+const NIVELES=[
+  {id:'alma',icon:'✨',label:'Alma'},{id:'contexto',icon:'🗺',label:'Contexto'},
+  {id:'estadistica',icon:'📊',label:'Estadística'},{id:'legado',icon:'🏛',label:'Legado'},
+  {id:'escudo',icon:'🛡',label:'Escudo'},{id:'diario',icon:'📖',label:'Diario'},
+  {id:'taller',icon:'🔧',label:'Taller'},{id:'ecosistema',icon:'🌿',label:'Ecosistema'},
+  {id:'codigo',icon:'💻',label:'Código'},{id:'ideas',icon:'💡',label:'Ideas'},
+  {id:'directorio',icon:'📋',label:'Directorio'},
+];
+
+// ═══════════════════════════════════════
+// MEMORIA SELECTIVA — v13
+// Temas detectados y su biblioteca asociada
+// ═══════════════════════════════════════
+const TEMA_MAP={
+  salud:    {nivel:'estadistica', kws:['peso','glucosa','gluc','calorías','calorias','presión','presion','comí','comida','ejercicio','dieta','ayuno','salud','mg/dl']},
+  codigo:   {nivel:'codigo',      kws:['código','codigo','función','funcion','bug','error','javascript','python','css','html','api','deploy','git','variable','loop','array']},
+  farmacia: {nivel:'escudo',      kws:['medicamento','medicina','pastilla','farmacia','dosis','metformina','omeprazol','suplemento','vitamina']},
+  familia:  {nivel:'ecosistema',  kws:['mamá','mama','eli','pepe','familia','hermano','hermana','papá','papa']},
+  ideas:    {nivel:'ideas',       kws:['idea','proyecto','negocio','startup','inventar','crear','propuesta','plan','futuro','sueño']},
+  general:  {nivel:null,          kws:[]},
+};
+
+// Detecta el tema de un mensaje para cargar solo la biblioteca relevante
+function detectarTema(txt){
+  const tl=(txt||'').toLowerCase();
+  for(const [tema,data] of Object.entries(TEMA_MAP)){
+    if(tema==='general') continue;
+    if(data.kws.some(k=>tl.includes(k))) return {tema,nivel:data.nivel};
+  }
+  return {tema:'general',nivel:null};
+}
+
+const CFG_DEF={
+  key:'',nombre:'Héctor',modelo:'gemini-2.5-flash',imgModelo:'gemini-2.5-flash-image',rsp:'normal',
+  alma:'Soy Leonor, asistente personal cercana y empática de Héctor. Soy directa, honesta y cálida. Lo conozco bien: su familia, sus metas de salud y sus proyectos de desarrollo. Uso español de México de forma natural.',
+  ctx:'',salud:{peso:'',meta:'85',gluc:'',pres:'',notas:'',calobj:'1800',calHoy:'0'},
+  familia:{mama:'',eli:'',pepe:'',otros:''}
+};
+
+// ═══ ESTADO GLOBAL ═══
+let cfg=JSON.parse(JSON.stringify(CFG_DEF));
+let mem=[],hist=[],bibData={},identidadViva='';
+let tts=false,pendImg=null,enviando=false,db=null,deferredPrompt=null;
+let ctrlOpen=false,modeArch=false,modeCons=false,modeBuf=false,nivelActivo=NIVELES[0].id;
+let bufFragmentos=[];
+let contadorConv=0;
+// Modos de Energía — v13
+let modoEnergia='normal'; // 'micro' | 'normal' | 'vuelo'
+let esperandoConfMicro=false;
+let _microTimer=null; // FIX v14r: timer de 2 min para auto-desbloquear micropaso
+// Estadísticas de salud — v13: historial con fechas
+// Formato: {gluc:[{v,f},...], peso:[{v,f},...]}
+let statsHistorial={gluc:[],peso:[]};
+// Última fecha de reset del Dashboard (se verifica al abrir)
+let dashFecha='';
+
+// ═══════════════════════════════════════
+// EMBEDDINGS — text-embedding-004 con fallback hash
+// ═══════════════════════════════════════
+async function obtenerEmbedding(texto){
+  if(!cfg.key||!texto) return null;
+  try{
+    const r=await fetch(`${GEMINI_URL}/${EMBED_MODEL}:embedContent?key=${cfg.key}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:`models/${EMBED_MODEL}`,content:{parts:[{text:texto.substring(0,500)}]}})
+    });
+    if(!r.ok) return null;
+    const d=await r.json();
+    return d.embedding?.values||null;
+  }catch(e){ return null; }
+}
+function embedHash(t){
+  return t.toLowerCase().split(/\s+/).map(w=>{
+    let h=5381;for(let i=0;i<w.length;i++) h=((h<<5)+h)^w.charCodeAt(i);return Math.abs(h)%1000;
+  });
+}
+function cosim(a,b){
+  const n=Math.min(a.length,b.length);
+  if(!n) return 0;
+  let d=0,na=0,nb=0;
+  for(let i=0;i<n;i++){d+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  return d/(Math.sqrt(na)*Math.sqrt(nb)+1e-9);
+}
+async function memGuardar(tipo,txt){
+  // En modo Buffer/Sandbox: CERO guardado en memoria
+  if(modeBuf) return;
+  if(!txt||txt.length<12) return;
+  if(mem.length&&mem[0].txt===txt) return;
+  let vec=await obtenerEmbedding(txt);
+  if(!vec) vec=embedHash(txt);
+  mem.unshift({tipo,txt,vec,f:new Date().toISOString()});
+  if(mem.length>400) mem=mem.slice(0,400);
+}
+// Búsqueda vectorial — máximo 3 recuerdos por llamada (v13)
+async function memBuscar(q,k=3){
+  if(!mem.length) return '';
+  let qv=await obtenerEmbedding(q);
+  if(!qv) qv=embedHash(q);
+  return [...mem]
+    .map(r=>({s:cosim(qv,r.vec),r}))
+    .sort((a,b)=>b.s-a.s)
+    .slice(0,k)
+    .map(x=>x.r.txt)
+    .join('\n');
+}
+
+// ═══════════════════════════════════════
+// IDENTIDAD VIVA — limitada a 200 palabras en el prompt (v13)
+// ═══════════════════════════════════════
+async function actualizarIdentidad(){
+  if(!cfg.key||mem.length<5) return;
+  try{
+    const recuerdosRecientes=mem.slice(0,20).map(m=>m.txt).join('\n');
+    const almaBib=bibData['alma']?.[0]?.resumen||'';
+    const contextoBib=bibData['contexto']?.[0]?.resumen||'';
+    const prompt=`Eres Leonor. Basándote en los recuerdos y conversaciones recientes con Héctor, escribe un DOCUMENTO DE IDENTIDAD VIVA. Describe quién es Héctor HOY: estado emocional, proyectos activos, preocupaciones, logros recientes, relaciones importantes, evolución. Escribe en segunda persona dirigido a ti misma (Leonor).
+
+RECUERDOS RECIENTES:
+${recuerdosRecientes}
+
+ALMA Y CONTEXTO GUARDADOS:
+${almaBib}
+${contextoBib}
+
+INSTRUCCIONES:
+- EXACTAMENTE entre 180 y 220 palabras (no más, no menos — se usará en prompt limitado)
+- Narrativo, cálido, preciso
+- Incluye: quién es, qué vive ahora, metas, familia, patrones observados
+- Última línea: "Actualizado: ${new Date().toLocaleDateString('es-MX')}"
+
+IDENTIDAD VIVA DE HÉCTOR:`;
+    const nueva=await llamarGeminiDirecto(prompt,400);
+    if(nueva&&nueva.length>80){
+      identidadViva=nueva;
+      await dbSet('identidad',identidadViva);
+      toast('🌱 Identidad actualizada');
+    }
+  }catch(e){ console.warn('Error actualizando identidad:',e); }
+}
+
+// ═══════════════════════════════════════
+// INDEXEDDB
+// ═══════════════════════════════════════
+function abrirDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('LeonorDB',5); // v5 agrega stats
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
+      if(!d.objectStoreNames.contains('bibliotecas')) d.createObjectStore('bibliotecas');
+    };
+    req.onsuccess=e=>{ db=e.target.result; res(db); };
+    req.onerror=()=>rej(req.error);
+  });
+}
+function dbSet(key,value,store='kv'){ return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); tx.objectStore(store).put(value,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+function dbGet(key,store='kv'){ return new Promise((res,rej)=>{ const tx=db.transaction(store,'readonly'); const req=tx.objectStore(store).get(key); req.onsuccess=()=>res(req.result??null); req.onerror=()=>rej(req.error); }); }
+
+// FIX v14r: guardarTodo con manejo de errores visible.
+// IndexedDB puede fallar silenciosamente en iOS Safari privado, cuota llena o modo incógnito.
+// Ahora el usuario siempre sabe si su memoria no se está guardando.
+let _dbErrorMostrado=false; // evitar spam de toasts repetidos en la misma sesión
+
+async function guardarTodo(){
+  try{
+    await dbSet('cfg',cfg);
+    await dbSet('mem',mem.slice(0,400));
+    await dbSet('bib',bibData,'bibliotecas');
+    if(identidadViva) await dbSet('identidad',identidadViva);
+    await dbSet('contadorConv',contadorConv);
+    await dbSet('statsHistorial',statsHistorial);
+    await dbSet('dashFecha',dashFecha);
+    // Reset flag de error si guardado fue exitoso
+    _dbErrorMostrado=false;
+  }catch(e){
+    console.error('[Leonor DB] Error guardando:', e);
+    // Mostrar alerta visible solo una vez por sesión para no saturar
+    if(!_dbErrorMostrado){
+      _dbErrorMostrado=true;
+      const esQuota=e.name==='QuotaExceededError'||e.message?.includes('quota');
+      const msg=esQuota
+        ?'⚠ Sin espacio en dispositivo — exporta tus datos en ⚙ Sync antes de perderlos'
+        :'⚠ Memoria local no disponible — tus datos de esta sesión no se están guardando';
+      setStatus('⚠ Error al guardar','red');
+      // Toast persistente (6 segundos) para que Héctor lo vea
+      const t=document.getElementById('toast');
+      t.textContent=msg; t.classList.add('show');
+      clearTimeout(t._tid);
+      t._tid=setTimeout(()=>t.classList.remove('show'),6000);
+    }
+  }
+}
+
+async function cargarTodo(){
+  try{
+    const c=await dbGet('cfg');
+    if(c) cfg={...CFG_DEF,...c,salud:{...CFG_DEF.salud,...c.salud},familia:{...CFG_DEF.familia,...c.familia}};
+    if(MIGRAR[cfg.modelo]) cfg.modelo=MIGRAR[cfg.modelo];
+    if(MIGRAR[cfg.imgModelo]) cfg.imgModelo=MIGRAR[cfg.imgModelo];
+    const m=await dbGet('mem'); if(m) mem=m;
+    const b=await dbGet('bib','bibliotecas'); if(b) bibData=b;
+    const id=await dbGet('identidad'); if(id) identidadViva=id;
+    const cc=await dbGet('contadorConv'); if(cc!=null) contadorConv=cc;
+    const sh=await dbGet('statsHistorial');
+    // FIX v13.1: merge con defaults para garantizar keys gluc y peso siempre presentes
+    if(sh) statsHistorial={gluc:[],peso:[],...sh};
+    const df=await dbGet('dashFecha'); if(df) dashFecha=df;
+    hist=[];
+    // Reset diario del Dashboard si es un día nuevo
+    revisarResetDiario();
+  }catch(e){
+    console.warn('DB load error:',e);
+    toast('⚠ Memoria no disponible en este modo');
+  }
+}
+
+// ═══════════════════════════════════════
+// SALUD — CAPAS TEMPORALES v13
+// Alma = logros históricos (cfg.salud.notas) — inmutables
+// Dashboard = estado HOY — se resetea cada día
+// Estadísticas = historial con fechas
+// ═══════════════════════════════════════
+function revisarResetDiario(){
+  const hoy=new Date().toDateString();
+  if(dashFecha!==hoy){
+    // Nuevo día: resetear calorías de hoy
+    cfg.salud.calHoy='0';
+    dashFecha=hoy;
+    guardarTodo();
+  }
+}
+
+// Guardar registro en estadísticas con fecha
+function statsRegistrar(tipo,valor){
+  if(!statsHistorial[tipo]) statsHistorial[tipo]=[];
+  statsHistorial[tipo].push({v:valor,f:new Date().toISOString()});
+  // Mantener historial completo (sin límite)
+  guardarTodo();
+}
+
+// Obtener tendencia de estadísticas como texto
+function statsTendencia(tipo){
+  const data=statsHistorial[tipo]||[];
+  if(data.length<2) return '';
+  return data.slice(-10).map(e=>`${e.v}`).join('→');
+}
+
+// ═══ INIT ═══
+(async function init(){
+  try{ await abrirDB(); await cargarTodo(); }catch(e){ console.warn('IndexedDB no disponible:',e); }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  actualizarBadge(); actualizarDashboard(); renderBibChips();
+  setStatus('Listo · Memoria activa','green');
+  bienvenida();
+  if(navigator.vibrate) navigator.vibrate(25);
+})();
+
+function bienvenida(){
+  const h=new Date().getHours();
+  const s=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
+  addMsg('leonor',`${s}, ${cfg.nombre}.\n¿En qué puedo ayudarte hoy?\n\n_Toca 🔄 para sincronizar tu memoria desde Drive._`);
+}
+function recargar(){
+  if(confirm('¿Sincronizar memoria desde Drive?\nSe descargarán tus recuerdos más recientes.')){
+    driveDescargar();
+  }
+}
+function actualizarBadge(){ document.getElementById('mbadge').textContent=NOMBRES_BADGE[cfg.modelo]||cfg.modelo; }
+
+// ═══ DASHBOARD ═══
+function actualizarDashboard(){
+  const peso=parseFloat(cfg.salud.peso)||0,calHoy=parseInt(cfg.salud.calHoy)||0,gluc=cfg.salud.gluc||'–';
+  const pct=peso?Math.min(100,Math.max(0,((105-peso)/10)*100)):0;
+  document.getElementById('health-fill').style.width=pct.toFixed(1)+'%';
+  document.getElementById('hstat-peso').innerHTML=`<span>${peso||'–'}</span> kg`;
+  document.getElementById('hstat-cal').innerHTML=`Cal: <span>${calHoy}</span>`;
+  document.getElementById('hstat-gluc').innerHTML=`G: <span>${gluc}</span>`;
+}
+
+// ═══ ESTADÍSTICAS OVERLAY — v13 ═══
+function openEstadisticas(){
+  const c=document.getElementById('stats-content');
+  const hoy=cfg.salud.peso||'–';
+  const tendPeso=statsTendencia('peso');
+  const tendGluc=statsTendencia('gluc');
+
+  let html=`<div class="stit">Estado HOY</div>`;
+  html+=`<div class="stat-entry">⚖ Peso: <span class="sv">${cfg.salud.peso||'–'} kg</span> · Meta: ${cfg.salud.meta||'–'} kg<br>`;
+  html+=`Cal hoy: <span class="sv">${cfg.salud.calHoy||'0'}</span> / ${cfg.salud.calobj||'1800'} · Gluc: <span class="sv">${cfg.salud.gluc||'–'}</span> · Presión: ${cfg.salud.pres||'–'}</div>`;
+
+  if(tendPeso){
+    html+=`<div class="stit" style="margin-top:12px">Tendencia Peso</div>`;
+    html+=`<div class="stat-trend">⚖ ${tendPeso} kg</div>`;
+  }
+  if(tendGluc){
+    html+=`<div class="stit">Tendencia Glucosa</div>`;
+    html+=`<div class="stat-trend">🩸 ${tendGluc} mg/dL</div>`;
+  }
+
+  const histPeso=(statsHistorial.peso||[]).slice(-20).reverse();
+  const histGluc=(statsHistorial.gluc||[]).slice(-20).reverse();
+
+  if(histPeso.length){
+    html+=`<div class="stit" style="margin-top:12px">Historial Peso</div>`;
+    html+=histPeso.map(e=>`<div class="stat-entry"><span class="sv">${e.v} kg</span> <span class="sd">· ${new Date(e.f).toLocaleDateString('es-MX',{day:'2-digit',month:'short'})}</span></div>`).join('');
+  }
+  if(histGluc.length){
+    html+=`<div class="stit" style="margin-top:12px">Historial Glucosa</div>`;
+    html+=histGluc.map(e=>`<div class="stat-entry"><span class="sv">${e.v} mg/dL</span> <span class="sd">· ${new Date(e.f).toLocaleDateString('es-MX',{day:'2-digit',month:'short'})}</span></div>`).join('');
+  }
+  if(!histPeso.length&&!histGluc.length&&!tendPeso&&!tendGluc){
+    html+=`<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">Sin estadísticas aún.<br>Usa /peso y /gluc para registrar con fecha.</p>`;
+  }
+
+  if(cfg.salud.notas){
+    html+=`<div class="stit" style="margin-top:12px">✨ Logros Históricos (Alma)</div>`;
+    html+=`<div class="mit" style="font-size:13px">${escH(cfg.salud.notas)}</div>`;
+  }
+
+  c.innerHTML=html;
+  document.getElementById('ov-stats').classList.add('open');
+}
+function closeEstadisticas(){ document.getElementById('ov-stats').classList.remove('open'); }
+
+// ═══ SLASH COMMANDS v13.1 — orden corregido: usuario siempre aparece primero ═══
+// FIX: procesarSlash ahora recibe el txt, muestra addMsg('user') internamente
+// antes de la respuesta de Leonor, garantizando el orden visual correcto.
+function procesarSlash(txt){
+  const tl=txt.trim().toLowerCase();
+
+  const mPeso=tl.match(/^\/peso\s+([\d.]+)/);
+  if(mPeso){
+    addMsg('user',txt); // ← usuario primero
+    cfg.salud.peso=mPeso[1];
+    statsRegistrar('peso',mPeso[1]);
+    actualizarDashboard();
+    addMsg('leonor',`⚖ Peso HOY: **${mPeso[1]} kg** · Progreso: ${Math.min(100,Math.max(0,((105-parseFloat(mPeso[1]))/10)*100)).toFixed(0)}%\n_Registrado en Estadísticas_`);
+    return true;
+  }
+  const mCal=tl.match(/^\/calorias?\s+([\d]+)/);
+  if(mCal){
+    addMsg('user',txt);
+    const prev=parseInt(cfg.salud.calHoy)||0,nueva=prev+parseInt(mCal[1]),obj=parseInt(cfg.salud.calobj)||1800;
+    cfg.salud.calHoy=String(nueva); guardarTodo(); actualizarDashboard();
+    addMsg('leonor',`🍽 +${mCal[1]} cal · Total hoy: **${nueva}** · Restantes: ${Math.max(0,obj-nueva)}/${obj}`);
+    return true;
+  }
+  if(tl==='/resetcal'){
+    addMsg('user',txt);
+    cfg.salud.calHoy='0'; guardarTodo(); actualizarDashboard();
+    addMsg('leonor','🔁 Calorías reiniciadas a 0.');
+    return true;
+  }
+  const mGluc=tl.match(/^\/gluc\s+([\d.]+)/);
+  if(mGluc){
+    addMsg('user',txt);
+    cfg.salud.gluc=mGluc[1];
+    statsRegistrar('gluc',mGluc[1]);
+    actualizarDashboard();
+    const trend=statsTendencia('gluc');
+    addMsg('leonor',`🩸 Glucosa HOY: **${mGluc[1]} mg/dL**${trend?`\n_Tendencia: ${trend}_`:''}\n_Registrado en Estadísticas_`);
+    return true;
+  }
+  const mPres=tl.match(/^\/pres\s+(\S+)/);
+  if(mPres){
+    addMsg('user',txt);
+    cfg.salud.pres=mPres[1]; guardarTodo();
+    addMsg('leonor',`💗 Presión: **${mPres[1]}**`);
+    return true;
+  }
+  if(tl==='/ayuda'||tl==='/help'){
+    addMsg('user',txt);
+    addMsg('leonor',`**Comandos disponibles:**\n• \`/peso 95\` — peso hoy + estadísticas\n• \`/gluc 110\` — glucosa hoy + estadísticas\n• \`/calorias 300\` — suma calorías\n• \`/resetcal\` — reinicia calorías del día\n• \`/pres 120/80\` — presión arterial\n• \`/ayuda\` — esta lista`);
+    return true;
+  }
+  return false;
+}
+
+// ═══ CONTROL BAR ═══
+function renderBibChips(){
+  document.getElementById('bib-chips').innerHTML=NIVELES.map(n=>`<button class="bchip${n.id===nivelActivo?' on':''}" onclick="selecNivel('${n.id}',this)">${n.icon} ${n.label}</button>`).join('');
+}
+function selecNivel(id,btn){ nivelActivo=id; document.querySelectorAll('.bchip').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); actualizarModoUI(); }
+function toggleCtrlBar(){ ctrlOpen=!ctrlOpen; document.getElementById('ctrl-bar').classList.toggle('open',ctrlOpen); }
+function toggleArch(){ modeArch=!modeArch; if(modeArch){ modeCons=false; modeBuf=false; cerrarBufPanel(); ocultarSandboxBanner(); } actualizarModoUI(); }
+function toggleCons(){ modeCons=!modeCons; if(modeCons){ modeArch=false; modeBuf=false; cerrarBufPanel(); ocultarSandboxBanner(); } actualizarModoUI(); }
+function toggleBuf(){
+  modeBuf=!modeBuf;
+  if(modeBuf){ modeArch=false; modeCons=false; abrirBufPanel(); mostrarSandboxBanner(); }
+  else{ cerrarBufPanel(); ocultarSandboxBanner(); }
+  actualizarModoUI();
+}
+function mostrarSandboxBanner(){ document.getElementById('sandbox-banner').classList.add('show'); }
+function ocultarSandboxBanner(){ document.getElementById('sandbox-banner').classList.remove('show'); }
+
+// ═══ MODOS DE ENERGÍA — v13 ═══
+// FIX v14r: helpers para manejar el estado de espera del Micropaso con timeout real
+function activarEsperaMicro(){
+  esperandoConfMicro=true;
+  // Auto-desbloqueo después de 2 minutos si el usuario no interactúa
+  clearTimeout(_microTimer);
+  _microTimer=setTimeout(()=>{
+    if(esperandoConfMicro){
+      esperandoConfMicro=false;
+      toast('🐢 Micropaso: tiempo agotado — puedes continuar');
+    }
+  },2*60*1000);
+}
+function resetearEsperaMicro(){
+  clearTimeout(_microTimer);
+  _microTimer=null;
+  esperandoConfMicro=false;
+}
+// El manejo de clases de #inp y #sbtn lo hace EXCLUSIVAMENTE actualizarModoUI(),
+// evitando que se pisen mutuamente y causen el bug del doble-tap.
+function setEnergia(modo){
+  modoEnergia=modo;
+  resetearEsperaMicro(); // FIX v14r: cancela timer pendiente y limpia estado
+  document.getElementById('ebtn-micro').className='ebtn'+(modo==='micro'?' on-micro':'');
+  document.getElementById('ebtn-normal').className='ebtn'+(modo==='normal'?' on-normal':'');
+  document.getElementById('ebtn-vuelo').className='ebtn'+(modo==='vuelo'?' on-vuelo':'');
+  actualizarModoUI();
+  const labels={micro:'🐢 Micropaso: una instrucción a la vez',normal:'💬 Modo normal',vuelo:'🚀 Vuelo: respuestas profundas activadas'};
+  toast(labels[modo]||'');
+}
+
+function actualizarModoUI(){
+  const nivel=NIVELES.find(n=>n.id===nivelActivo);
+  document.getElementById('tog-arch').className='ctog'+(modeArch?' on-arch':'');
+  document.getElementById('tog-cons').className='ctog'+(modeCons?' on-cons':'');
+  document.getElementById('tog-buf').className='ctog'+(modeBuf?' on-buf':'');
+  const lbl=document.getElementById('ctrl-mode-lbl');
+  const inp=document.getElementById('inp'),sbtn=document.getElementById('sbtn');
+
+  // FIX v13.1: limpiar TODAS las clases de modo de una sola vez antes de reasignar
+  // evita que mode-micro/mode-vuelo queden pegadas al cambiar a modo biblioteca
+  inp.className='';
+  sbtn.className='sbtn';
+
+  if(modeArch){
+    lbl.textContent=`📥 Archivado → ${nivel?.label}${modoEnergia==='micro'?' · 🐢':modoEnergia==='vuelo'?' · 🚀':''}`;
+    inp.classList.add('mode-arch'); sbtn.classList.add('mode-arch');
+    inp.placeholder=`Escribe para archivar en ${nivel?.label}…`;
+  } else if(modeCons){
+    lbl.textContent=`🔍 Consultando → ${nivel?.label}`;
+    inp.classList.add('mode-cons'); sbtn.classList.add('mode-cons');
+    inp.placeholder=`Consultar en ${nivel?.label}…`;
+  } else if(modeBuf){
+    lbl.textContent=`📋 SANDBOX · Buffer → ${nivel?.label}`;
+    inp.classList.add('mode-buf'); sbtn.classList.add('mode-buf');
+    inp.placeholder=`Agrega fragmento (NO se guarda en memoria)…`;
+  } else {
+    // Sin modo biblioteca — aplicar estilo de energía
+    const eIcon=modoEnergia==='micro'?'🐢':modoEnergia==='vuelo'?'🚀':'💬';
+    lbl.textContent=`${eIcon} ${modoEnergia==='micro'?'Micropaso':modoEnergia==='vuelo'?'Vuelo':'Conversación casual'}`;
+    inp.placeholder='Habla con Leonor… (/peso 95 · /gluc 110 · /calorias 300)';
+    if(modoEnergia==='micro'){ inp.classList.add('mode-micro'); sbtn.classList.add('mode-micro'); }
+    else if(modoEnergia==='vuelo'){ inp.classList.add('mode-vuelo'); sbtn.classList.add('mode-vuelo'); }
+  }
+}
+
+// ═══ BUFFER — SANDBOX v13 ═══
+function abrirBufPanel(){ document.getElementById('buf-panel').classList.add('open'); actualizarBufUI(); }
+function cerrarBufPanel(){ document.getElementById('buf-panel').classList.remove('open'); }
+function actualizarBufUI(){
+  document.getElementById('buf-count').textContent=`${bufFragmentos.length} fragmento${bufFragmentos.length!==1?'s':''}`;
+  document.getElementById('buf-preview').textContent=bufFragmentos.length?bufFragmentos.join('\n\n---\n\n'):'— vacío —';
+}
+function agregarAlBuffer(txt){
+  if(!txt.trim()) return;
+  bufFragmentos.push(txt.trim());
+  actualizarBufUI();
+  toast(`📋 Fragmento ${bufFragmentos.length} en sandbox`);
+  // Leonor responde pero NO guarda nada
+  if(cfg.key){
+    const nivelInfo=NIVELES.find(n=>n.id===nivelActivo);
+    llamarGeminiDirecto(
+      `Eres Leonor en modo SANDBOX. Héctor está construyendo un documento para "${nivelInfo.label}". Acaba de agregar:\n\n"${txt}"\n\nResponde brevemente (2-3 líneas): comenta, conecta, haz una pregunta útil. Esta conversación es privada y NADA se guardará en tu memoria permanente.`,
+      400
+    ).then(resp=>{ if(resp) addMsg('leonor',resp); }).catch(()=>{});
+  }
+}
+
+// Commit del Buffer v14r: Leonor genera el resumen automáticamente
+async function commitBuffer(){
+  if(!bufFragmentos.length){ toast('El buffer está vacío'); return; }
+  if(!cfg.key){ toast('⚙ Necesitas tu API Key'); return; }
+  const nivel=nivelActivo,nivelInfo=NIVELES.find(n=>n.id===nivel);
+  cerrarBufPanel(); ocultarSandboxBanner(); mostrarThink(); setStatus('Destilando…','amber');
+  try{
+    const textoBuffer=bufFragmentos.join('\n\n---\n\n');
+    const resumenGenerado=await destilarTexto(textoBuffer,nivelInfo);
+    quitarThink();
+    // Mostrar resumen como mensaje normal con 3 botones de acción
+    const chat=document.getElementById('chat');
+    const d=document.createElement('div');
+    d.className='msg leonor';
+    d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor · Resumen</div><div class="mb"><div class="bib-tag">${escH(nivelInfo.icon+' '+nivelInfo.label)}</div>${renderMd(resumenGenerado)}</div><div class="msg-acts"><button class="mab ok js-buf-save">✅ Guardar</button><button class="mab js-buf-regen">🔄 Regenerar</button><button class="mab js-buf-mejorar">✏️ Mejorar</button></div></div>`;
+    chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+    setStatus('Revisa el resumen…','amber');
+
+    // ✅ Guardar — archiva en biblioteca
+    d.querySelector('.js-buf-save').addEventListener('click', async function(){
+      this.disabled=true; setStatus('Archivando…','amber');
+      try{
+        const vinculos=await encontrarVinculos(nivel,resumenGenerado);
+        if(!bibData[nivel]) bibData[nivel]=[];
+        bibData[nivel].unshift({resumen:resumenGenerado,raw:textoBuffer.substring(0,600),fecha:new Date().toISOString(),vinculos});
+        modeBuf=false;
+        await memGuardar('biblioteca',resumenGenerado);
+        await guardarTodo();
+        bufFragmentos=[];
+        actualizarModoUI(); ocultarSandboxBanner();
+        let msgF=`📥 **Archivado en ${nivelInfo.icon} ${nivelInfo.label}**`;
+        if(vinculos.length) msgF+=`\n\n🔗 **Conexiones:**\n${vinculos.map(v=>'• '+v).join('\n')}`;
+        addMsg('leonor',msgF,null,`${nivelInfo.icon} ${nivelInfo.label}`);
+        setStatus('Listo · Memoria activa','green'); toast(`✅ Archivado en ${nivelInfo.label}`);
+        // Desactivar los 3 botones del mensaje
+        d.querySelectorAll('.mab').forEach(b=>{ b.disabled=true; b.style.opacity='0.4'; });
+      }catch(e){ addMsg('leonor',`⚠ Error archivando: ${e.message}`); setStatus('Error','red'); }
+    });
+
+    // 🔄 Regenerar — genera otro resumen diferente
+    d.querySelector('.js-buf-regen').addEventListener('click', async function(){
+      this.disabled=true; setStatus('Regenerando…','amber');
+      d.querySelectorAll('.mab').forEach(b=>b.disabled=true);
+      await commitBuffer();
+    });
+
+    // ✏️ Mejorar — Héctor escribe qué cambiar
+    d.querySelector('.js-buf-mejorar').addEventListener('click', function(){
+      const inp=document.getElementById('inp');
+      inp.value='';
+      inp.placeholder='¿Qué quieres que cambie en el resumen?';
+      inp.focus();
+      // Interceptar el siguiente envío para mejorar el resumen
+      const _resumenActual=resumenGenerado;
+      const _nivelInfo=nivelInfo;
+      const _textoBuffer=textoBuffer;
+      const _nivel=nivel;
+      const _dBtn=d;
+      function mejorarHandler(){
+        const instruccion=inp.value.trim();
+        if(!instruccion) return;
+        inp.removeEventListener('keydown',keyHandler);
+        inp.value=''; inp.style.height='auto';
+        inp.placeholder='Habla con Leonor… (/peso 95 · /gluc 110 · /calorias 300)';
+        addMsg('user',instruccion);
+        mostrarThink(); setStatus('Mejorando resumen…','amber');
+        _dBtn.querySelectorAll('.mab').forEach(b=>b.disabled=true);
+        llamarGeminiDirecto(
+          `Héctor quiere mejorar este resumen para la carpeta "${_nivelInfo.label}".\n\nRESUMEN ACTUAL:\n${_resumenActual}\n\nINSTRUCCIÓN DE HÉCTOR: ${instruccion}\n\nEscribe el resumen mejorado completo, aplicando la instrucción:`,
+          1800
+        ).then(async nuevoResumen=>{
+          quitarThink();
+          const d2=document.createElement('div');
+          d2.className='msg leonor';
+          d2.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor · Resumen mejorado</div><div class="mb"><div class="bib-tag">${escH(_nivelInfo.icon+' '+_nivelInfo.label)}</div>${renderMd(nuevoResumen)}</div><div class="msg-acts"><button class="mab ok js-buf-save2">✅ Guardar</button><button class="mab js-buf-regen2">🔄 Regenerar</button><button class="mab js-buf-mejorar2">✏️ Mejorar</button></div></div>`;
+          document.getElementById('chat').appendChild(d2); document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
+          setStatus('Revisa el resumen…','amber');
+
+          d2.querySelector('.js-buf-save2').addEventListener('click', async function(){
+            this.disabled=true; setStatus('Archivando…','amber');
+            try{
+              const vinculos2=await encontrarVinculos(_nivel,nuevoResumen);
+              if(!bibData[_nivel]) bibData[_nivel]=[];
+              bibData[_nivel].unshift({resumen:nuevoResumen,raw:_textoBuffer.substring(0,600),fecha:new Date().toISOString(),vinculos:vinculos2});
+              modeBuf=false;
+              await memGuardar('biblioteca',nuevoResumen);
+              await guardarTodo();
+              bufFragmentos=[];
+              actualizarModoUI(); ocultarSandboxBanner();
+              let msgF=`📥 **Archivado en ${_nivelInfo.icon} ${_nivelInfo.label}**`;
+              if(vinculos2.length) msgF+=`\n\n🔗 **Conexiones:**\n${vinculos2.map(v=>'• '+v).join('\n')}`;
+              addMsg('leonor',msgF,null,`${_nivelInfo.icon} ${_nivelInfo.label}`);
+              setStatus('Listo · Memoria activa','green'); toast(`✅ Archivado en ${_nivelInfo.label}`);
+              d2.querySelectorAll('.mab').forEach(b=>{ b.disabled=true; b.style.opacity='0.4'; });
+            }catch(e){ addMsg('leonor',`⚠ Error archivando: ${e.message}`); setStatus('Error','red'); }
+          });
+          d2.querySelector('.js-buf-regen2').addEventListener('click', async function(){
+            d2.querySelectorAll('.mab').forEach(b=>b.disabled=true);
+            await commitBuffer();
+          });
+          d2.querySelector('.js-buf-mejorar2').addEventListener('click',function(){
+            d2.querySelector('.js-buf-mejorar2').click=null;
+            toast('✏️ Escribe tu instrucción y envía');
+          });
+        }).catch(e=>{ quitarThink(); addMsg('leonor',`⚠ Error: ${e.message}`); setStatus('Error','red'); });
+      }
+      function keyHandler(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); mejorarHandler(); } }
+      inp.addEventListener('keydown',keyHandler);
+      // También capturar el botón enviar una sola vez
+      const sbtn=document.getElementById('sbtn');
+      function sbtnHandler(){ sbtn.removeEventListener('click',sbtnHandler); mejorarHandler(); }
+      sbtn.addEventListener('click',sbtnHandler);
+      toast('✏️ Escribe qué cambiar y toca ➤');
+    });
+
+  }catch(e){ quitarThink(); addMsg('leonor',`⚠ Error destilando: ${e.message}`); setStatus('Error','red'); }
+}
+
+function descartarBuffer(){
+  if(!bufFragmentos.length){ cerrarBufPanel(); modeBuf=false; ocultarSandboxBanner(); actualizarModoUI(); return; }
+  if(!confirm(`¿Descartar ${bufFragmentos.length} fragmento(s)?`)) return;
+  bufFragmentos=[];
+  actualizarBufUI(); cerrarBufPanel(); modeBuf=false; ocultarSandboxBanner(); actualizarModoUI();
+  toast('🗑 Buffer descartado');
+}
+
+// ═══════════════════════════════════════
+// DESTILACIÓN RICA v14r2 — sin preámbulo, maxTokens 2000
+// ═══════════════════════════════════════
+async function destilarTexto(textoRaw,nivelInfo){
+  const prompt=`Eres Leonor. EMPIEZA DIRECTO con el primer bullet. PROHIBIDO escribir introducción, "Aquí está el resumen", "Con gusto", "Claro" o cualquier preámbulo. El primer carácter de tu respuesta debe ser •
+
+Carpeta: "${nivelInfo.label}"
+
+REGLAS:
+1. MÍNIMO 8 bullets con datos CONCRETOS (fechas, nombres, números, decisiones)
+2. ENTRE 300 y 600 palabras — NO MENOS DE 300
+3. Cada bullet: mínimo 2 líneas de info útil
+4. Subtítulos en **negrita**
+5. Contexto general + detalles específicos + implicaciones futuras
+6. Penúltima sección: "🔗 Conexiones posibles con otras áreas de vida de Héctor"
+7. Última línea OBLIGATORIA: "🎯 Relevancia futura: [para qué servirá]"
+8. Español de México, tono cálido y preciso
+
+TEXTO:
+${textoRaw}`;
+  return await llamarGeminiDirecto(prompt,2000);
+}
+
+// ═══ MEMORIA CONECTADA ═══
+async function encontrarVinculos(nivelOrigen,resumenNuevo){
+  const otrosNiveles=NIVELES.filter(n=>n.id!==nivelOrigen&&bibData[n.id]?.length>0).slice(0,5);
+  if(!otrosNiveles.length) return [];
+  const contextoOtros=otrosNiveles.map(n=>`[${n.label}]: ${bibData[n.id][0].resumen.substring(0,120)}`).join('\n\n');
+  const prompt=`Eres Leonor. Detecta conexiones REALES Y ÚTILES entre la información nueva y tu memoria existente.
+
+NUEVA INFORMACIÓN (resumen):
+${resumenNuevo.substring(0,250)}
+
+TU MEMORIA EXISTENTE:
+${contextoOtros}
+
+INSTRUCCIÓN: Lista de 0 a 3 conexiones concretas. Una por línea. Formato: "[Carpeta]: descripción". Si no hay conexiones responde exactamente: NINGUNA
+
+CONEXIONES:`;
+  try{
+    const resp=await llamarGeminiDirecto(prompt,250);
+    if(!resp||resp.trim().toUpperCase()==='NINGUNA') return [];
+    return resp.split('\n').map(l=>l.trim()).filter(l=>l.length>8).slice(0,3);
+  }catch(e){ return []; }
+}
+
+async function archivarInmediato(nivel,textoRaw){
+  const nivelInfo=NIVELES.find(n=>n.id===nivel);
+  if(!cfg.key) throw new Error('Sin API Key');
+  setStatus('Destilando…','amber');
+  const resumen=await destilarTexto(textoRaw,nivelInfo);
+  const vinculos=await encontrarVinculos(nivel,resumen);
+  if(!bibData[nivel]) bibData[nivel]=[];
+  // Sin límite de entradas — bug fix v13
+  bibData[nivel].unshift({resumen,raw:textoRaw.substring(0,600),fecha:new Date().toISOString(),vinculos});
+  await guardarTodo();
+  return {resumen,vinculos,nivelInfo};
+}
+
+async function consultarBiblioteca(nivel){
+  const entradas=bibData[nivel]||[];
+  if(!entradas.length) return null;
+  return entradas.slice(0,4).map(e=>e.resumen).join('\n\n---\n\n');
+}
+
+// ═══ UI CHAT ═══
+function resizeInp(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,112)+'px'; }
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); enviar(); } }
+function renderMd(raw){
+  return raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```([\s\S]*?)```/g,(_,c)=>`<pre><code>${c.trim()}</code></pre>`)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/_(.+?)_/g,'<em>$1</em>')
+    .replace(/^---$/gm,'<hr>').replace(/^[•*-] (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>');
+}
+function escH(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function addMsg(rol,txt,imgB64=null,tagLabel=null,esMicropaso=false){
+  const chat=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg '+rol+(esMicropaso?' micropaso':'');
+  const av=rol==='leonor'?'L':(cfg.nombre||'H').substring(0,2).toUpperCase();
+  const nm=rol==='leonor'?'Leonor':cfg.nombre;
+  const imgH=imgB64?`<img src="data:image/jpeg;base64,${imgB64}" alt="foto" loading="lazy">`:'';
+  const tagH=tagLabel?`<div class="bib-tag">${escH(tagLabel)}</div>`:'';
+  const microH=esMicropaso?`<div class="bib-tag" style="background:rgba(52,152,219,.1);color:#3498db;border-color:rgba(52,152,219,.25)">🐢 Micropaso</div>`:'';
+  d.innerHTML=`<div class="av">${escH(av)}</div><div class="mc"><div class="mn">${escH(nm)}</div><div class="mb">${tagH}${microH}${renderMd(txt)}${imgH}</div>${
+    rol==='leonor'?`<div class="msg-acts">
+      <button class="mab js-copy">📋 Copiar</button>
+      <button class="mab js-oir">🔊 Oír</button>
+      <button class="mab js-save">★ Guardar</button>
+      ${esMicropaso?'<button class="mab sig js-sig">▶ Siguiente paso</button><button class="mab js-skip">⏭ Saltar</button>':''}
+    </div>`:''
+  }</div>`;
+  if(rol==='leonor'){
+    d.querySelector('.js-copy').addEventListener('click',function(){ copiarMsg(this,txt); });
+    d.querySelector('.js-oir').addEventListener('click',()=>speak(txt));
+    d.querySelector('.js-save').addEventListener('click',function(){ guardarMemBtn(this,txt); });
+    if(esMicropaso){
+      // ▶ Siguiente: confirma el paso actual y pide el siguiente
+      d.querySelector('.js-sig').addEventListener('click',()=>{
+        resetearEsperaMicro();
+        document.getElementById('inp').value='Listo, continúa con el siguiente paso';
+        enviar();
+      });
+      // ⏭ Saltar: descarta este paso y deja al usuario escribir libremente
+      d.querySelector('.js-skip').addEventListener('click',()=>{
+        resetearEsperaMicro();
+        toast('🐢 Paso saltado — escribe tu siguiente mensaje');
+        document.getElementById('inp').focus();
+      });
+    }
+  }
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+}
+function copiarMsg(btn,txt){ navigator.clipboard.writeText(txt).then(()=>{ btn.textContent='✓ Copiado'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent='📋 Copiar'; btn.classList.remove('ok'); },2000); }).catch(()=>toast('No se pudo copiar')); }
+async function guardarMemBtn(btn,txt){
+  if(modeBuf){ toast('🟠 Sandbox activo — no se guarda'); return; }
+  await memGuardar('guardado',txt); guardarTodo();
+  btn.textContent='✓ Guardado'; btn.classList.add('saved');
+  setTimeout(()=>{ btn.textContent='★ Guardar'; btn.classList.remove('saved'); },2000);
+  toast('★ Guardado en memoria');
+}
+function mostrarThink(){ const chat=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg leonor'; d.id='think'; d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor</div><div class="mb"><div class="think-b"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; }
+function quitarThink(){ const e=document.getElementById('think'); if(e) e.remove(); }
+
+// ═══ ENVIAR ═══
+async function enviar(){
+  if(enviando) return;
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt&&!pendImg) return;
+  // FIX v14: re-trim aquí porque el usuario puede tener espacios antes del /
+  const txtSlash=txt.trim();
+  if(txtSlash.startsWith('/')&&!pendImg){
+    // FIX v13.1: procesarSlash() ya llama addMsg('user') y addMsg('leonor') en orden correcto
+    if(procesarSlash(txtSlash)){
+      inp.value=''; inp.style.height='auto';
+      return;
+    }
+  }
+  if(!cfg.key){ toast('⚙ Pon tu API Key primero'); openCfg(); return; }
+
+  // Modo Buffer/Sandbox: agrega al buffer, Leonor responde pero NO guarda
+  if(modeBuf&&!pendImg){ addMsg('user',txt); agregarAlBuffer(txt); inp.value=''; inp.style.height='auto'; return; }
+
+  // FIX v14r: Micropaso — bloqueo real con mensaje de ayuda claro.
+  // Solo se desbloquea con ▶ Siguiente paso, ⏭ Saltar, o timeout de 2 min.
+  // Ya NO se desbloquea con cualquier mensaje libre (era demasiado permisivo).
+  if(modoEnergia==='micro'&&esperandoConfMicro){
+    toast('🐢 Toca ▶ Siguiente paso o ⏭ Saltar');
+    return;
+  }
+
+  enviando=true; document.getElementById('sbtn').disabled=true;
+  inp.value=''; inp.style.height='auto';
+  const imgSnap=pendImg; pendImg=null;
+
+  if(modeArch&&!imgSnap){
+    addMsg('user',txt); mostrarThink();
+    try{
+      const {resumen,vinculos,nivelInfo}=await archivarInmediato(nivelActivo,txt);
+      quitarThink();
+      let msgF=`📥 **Archivado en ${nivelInfo.icon} ${nivelInfo.label}**\n\n${resumen}`;
+      if(vinculos.length) msgF+=`\n\n🔗 **Conexiones:**\n${vinculos.map(v=>'• '+v).join('\n')}`;
+      addMsg('leonor',msgF,null,`${nivelInfo.icon} ${nivelInfo.label}`);
+      toast(`✓ Archivado en ${nivelInfo.label}`); setStatus('Listo · Memoria activa','green');
+    }catch(e){ quitarThink(); addMsg('leonor',`⚠ Error archivando: ${e.message}`); setStatus('Error','red'); }
+    finally{ enviando=false; document.getElementById('sbtn').disabled=false; }
+    return;
+  }
+
+  let bibCtxExtra='';
+  if(modeCons&&!imgSnap){
+    const ctx=await consultarBiblioteca(nivelActivo);
+    const nivelInfo=NIVELES.find(n=>n.id===nivelActivo);
+    if(ctx){ bibCtxExtra=`\n\n=== BIBLIOTECA · ${nivelInfo.label.toUpperCase()} ===\n${ctx}\n===`; toast(`🔍 Consultando ${nivelInfo.label}…`); }
+    else toast(`📚 ${nivelInfo.label} vacía`);
+  }
+
+  const msgTxt=txt||(imgSnap?'[Foto enviada]':'');
+  addMsg('user',txt||(imgSnap?'[Foto]':''),imgSnap);
+  hist.push({r:'user',t:msgTxt});
+  if(hist.length>40) hist=hist.slice(-40);
+
+  setStatus('Leonor está pensando…','amber'); mostrarThink();
+  if(navigator.vibrate) navigator.vibrate(15);
+
+  try{
+    // Memoria Selectiva v13: detectar tema y cargar solo esa biblioteca
+    const {tema,nivel:nivelTema}=detectarTema(txt);
+    let bibtemaCtx='';
+    if(nivelTema&&!modeCons&&bibData[nivelTema]?.length){
+      const entradas=bibData[nivelTema].slice(0,3);
+      bibtemaCtx=`\n\n=== BIBLIOTECA · ${nivelTema.toUpperCase()} ===\n${entradas.map(e=>e.resumen.substring(0,300)).join('\n---\n')}\n===`;
+    }
+    const memCtx=await memBuscar(txt,3); // máximo 3 recuerdos (v13)
+    const resp=await llamarGemini(txt,imgSnap,bibCtxExtra||bibtemaCtx,memCtx,tema);
+    quitarThink();
+    const esMicropaso=modoEnergia==='micro'&&!imgSnap;
+    const nivelTag=modeCons?`${NIVELES.find(n=>n.id===nivelActivo)?.icon} ${NIVELES.find(n=>n.id===nivelActivo)?.label}`:null;
+    addMsg('leonor',resp,null,nivelTag,esMicropaso);
+    if(esMicropaso) activarEsperaMicro(); // FIX v14r: arranca timer de 2 min
+    hist.push({r:'leonor',t:resp});
+    if(hist.length>40) hist=hist.slice(-40);
+    // En modo Buffer/Sandbox NO guardamos diálogo en memoria
+    if(!modeBuf&&txt.length>15) await memGuardar('dialogo',txt);
+    if(tts) speak(resp);
+    setStatus('Listo · Memoria activa','green');
+    guardarTodo();
+    contadorConv++;
+    // FIX v14: actualizar identidad solo si hay recuerdos relevantes nuevos
+    // (tipo guardado o diario), no cada 10 conversaciones de forma ciega
+    if(contadorConv%10===0){
+      const tieneRelevantes=mem.slice(0,10).some(r=>r.tipo==='guardado'||r.tipo==='diario'||r.tipo==='biblioteca');
+      if(tieneRelevantes) actualizarIdentidad();
+    }
+  }catch(e){ quitarThink(); addMsg('leonor',`⚠ **Error:** ${e.message}\n\nRevisa tu API Key o cambia de modelo en ⚙`); setStatus('Error de conexión','red'); }
+  finally{ enviando=false; document.getElementById('sbtn').disabled=false; }
+}
+
+// ═══════════════════════════════════════
+// GEMINI API — Memoria Selectiva v13
+// Identidad Viva limitada a 200 palabras en prompt
+// ═══════════════════════════════════════
+async function llamarGemini(txt,imgB64=null,bibCtxExtra='',memCtx='',tema='general'){
+  const famCtx=buscarFamilia(txt);
+  // Identidad Viva: truncar a 200 palabras para no saturar contexto
+  let identidadBloque='';
+  if(identidadViva){
+    const palabras=identidadViva.split(/\s+/).slice(0,200).join(' ');
+    identidadBloque=`\n\n═══ IDENTIDAD VIVA ═══\n${palabras}\n═══`;
+  }
+
+  // Salud: siempre hablar del estado HOY
+  const saludHoy=`Peso HOY: ${cfg.salud.peso||'–'} kg (meta: ${cfg.salud.meta||'–'} kg)\nGlucosa HOY: ${cfg.salud.gluc||'–'} mg/dL | Presión: ${cfg.salud.pres||'–'}\nCalorías hoy: ${cfg.salud.calHoy||'0'} / ${cfg.salud.calobj||'1800'}`;
+  const tendencias=`Tendencia peso: ${statsTendencia('peso')||'sin datos'} | Tendencia glucosa: ${statsTendencia('gluc')||'sin datos'}`;
+
+  // Logros históricos (Alma de salud — inmutables)
+  const saludAlma=cfg.salud.notas?`\nLogros históricos: ${cfg.salud.notas}`:'';
+
+  // Instrucción de modo de energía
+  const energiaInstr=modoEnergia==='micro'
+    ?'\n\nMODO MICROPASO: Da UNA SOLA instrucción concreta y muy específica. Nada más. Espera la confirmación de Héctor antes de continuar. Termina con: "¿Listo para el siguiente paso?"'
+    :modoEnergia==='vuelo'
+    ?'\n\nMODO VUELO: Sé profunda, técnica y detallada. Incluye todo el contexto, alternativas, pros y contras. No limites tu respuesta.'
+    :'';
+
+  // Indicador de tema detectado
+  const temaInstr=tema!=='general'?`\n[Tema detectado: ${tema} — contexto de biblioteca cargado]`:'';
+
+  const system=`${cfg.alma}
+
+CONTEXTO ACTUAL:
+${cfg.ctx||'Sin configurar.'}${identidadBloque}
+
+MEMORIA RELEVANTE (máx 3 recuerdos):
+${memCtx||'Sin recuerdos previos.'}${bibCtxExtra}
+
+SALUD HOY (estado del día):
+${saludHoy}
+${tendencias}${saludAlma}
+
+FAMILIA:
+${famCtx||cfg.familia.otros||'Sin datos.'}
+
+Eres Leonor. Responde en español de México, cálida y útil.
+IMPORTANTE: Al hablar de salud, siempre refiere el estado de HOY, nunca cites valores del pasado como si fueran actuales.
+CAPACIDADES DE IMÁGENES: Puedes CREAR imágenes (el usuario toca 🍌 Crear o te lo pide en el chat) y puedes LEER/ANALIZAR imágenes que el usuario te envíe (toca 🖼 Imagen). Cuando el usuario mencione querer ver algo, crear algo visual, o mande una foto, usa estas capacidades naturalmente en la conversación. Si el usuario dice "crea una imagen de X" o "muéstrame cómo se ve X", indícale que puede tocar el botón 🍌 Crear o que mande la foto con 🖼 Imagen.${energiaInstr}${temaInstr}${cfg.rsp==='corto'&&modoEnergia==='normal'?' Máximo 3 líneas.':cfg.rsp==='profundo'&&modoEnergia!=='micro'?' Sé detallada y reflexiva.':''}`;
+
+  const contents=[];
+  for(const h of hist.slice(-10)) contents.push({role:h.r==='leonor'?'model':'user',parts:[{text:h.t}]});
+  const partsActual=[];
+  if(imgB64) partsActual.push({inlineData:{mimeType:'image/jpeg',data:imgB64}});
+  partsActual.push({text:txt||'Analiza esta imagen.'});
+  contents.push({role:'user',parts:partsActual});
+
+  const modelId=MODEL_IDS[imgB64?cfg.imgModelo:cfg.modelo]||cfg.modelo;
+  // maxTokens según modo de energía y config — fix v13
+  let maxT=cfg.rsp==='corto'?300:cfg.rsp==='profundo'?1800:900;
+  if(modoEnergia==='micro') maxT=400; // fix bug: era 300 y se cortaba
+  if(modoEnergia==='vuelo') maxT=1800;
+
+  const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:system}]},
+      contents,
+      generationConfig:{maxOutputTokens:maxT,temperature:modoEnergia==='vuelo'?0.9:0.85}
+    })
+  });
+  if(!r.ok){ const err=await r.json().catch(()=>({})); const msg=err?.error?.message||`HTTP ${r.status}`; if(r.status===429) throw new Error('Límite de cuota. Cambia de modelo en ⚙'); if(r.status===404) throw new Error('Modelo no encontrado. Prueba Gemini 2.5 Flash en ⚙'); throw new Error(msg); }
+  const data=await r.json();
+  const cand=data.candidates?.[0];
+  if(!cand) throw new Error('Sin respuesta. Intenta de nuevo.');
+  if(cand.finishReason==='SAFETY') throw new Error('Respuesta bloqueada por filtro de seguridad.');
+  return cand.content.parts.map(p=>p.text||'').join('').trim();
+}
+
+// llamarGeminiDirecto — v14r2: default 2000 tokens, sin límite artificial
+async function llamarGeminiDirecto(prompt,maxTokens=2000){
+  const modelId=MODEL_IDS[cfg.modelo]||cfg.modelo;
+  const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxTokens,temperature:0.5}})
+  });
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data=await r.json();
+  return data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim()||'';
+}
+
+// ═══════════════════════════════════════
+// GOOGLE DRIVE SYNC v14r
+// ═══════════════════════════════════════
+async function driveLogin(){
+  return new Promise((res,rej)=>{
+    if(driveToken){ res(driveToken); return; }
+
+    // FIX v14r: timeout de 60 segundos — si el usuario cierra el popup OAuth
+    // sin autorizar, la Promise rechaza limpiamente en lugar de colgar para siempre
+    const timer=setTimeout(()=>{
+      rej(new Error('Tiempo de espera agotado. Toca 🔄 para intentar de nuevo.'));
+    },60000);
+
+    try{
+      const client=google.accounts.oauth2.initTokenClient({
+        client_id:DRIVE_CLIENT_ID,scope:DRIVE_SCOPE,
+        callback:(resp)=>{
+          clearTimeout(timer);
+          if(resp.error){
+            // error_subtype='access_denied' = usuario cerró o rechazó el popup
+            const msg=resp.error==='access_denied'
+              ?'Acceso a Drive cancelado.'
+              :`Error Drive: ${resp.error}`;
+            rej(new Error(msg));
+            return;
+          }
+          driveToken=resp.access_token;
+          // Token expira en ~1h — programar limpieza para forzar re-auth
+          setTimeout(()=>{ driveToken=null; },55*60*1000);
+          res(driveToken);
+        }
+      });
+      client.requestAccessToken();
+    }catch(e){
+      clearTimeout(timer);
+      rej(new Error('Google Sign-In no disponible. Recarga la página.'));
+    }
+  });
+}
+async function driveGetFileId(){
+  const r=await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)',{headers:{Authorization:`Bearer ${driveToken}`}});
+  const d=await r.json();
+  return d.files?.find(f=>f.name===DRIVE_FILE)?.id||null;
+}
+async function driveSubir(){
+  try{
+    setStatus('Conectando con Drive…','amber');
+    await driveLogin();
+    let diarFull=[]; try{ diarFull=(await dbGet('diario'))||[]; }catch(e){}
+    const payload=JSON.stringify({
+      version:13,app:'Leonor-Gemini',exportado:new Date().toISOString(),
+      cfg:{...cfg,key:''},mem,diar:diarFull,bibData,identidadViva,contadorConv,statsHistorial
+    });
+    const fileId=await driveGetFileId();
+    const meta=JSON.stringify({name:DRIVE_FILE,parents:fileId?undefined:['appDataFolder']});
+    const form=new FormData();
+    form.append('metadata',new Blob([meta],{type:'application/json'}));
+    form.append('file',new Blob([payload],{type:'application/json'}));
+    const url=fileId?`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`:'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    const method=fileId?'PATCH':'POST';
+    const r=await fetch(url,{method,headers:{Authorization:`Bearer ${driveToken}`},body:form});
+    if(!r.ok) throw new Error(`Drive upload HTTP ${r.status}`);
+    toast('☁️ Memoria subida a Drive ✓');
+    setStatus('Listo · Sync Drive ✓','green');
+  }catch(e){
+    // FIX v14: fallo de Drive es crítico — status en rojo + mensaje en chat con solución
+    console.error('[Leonor Drive] Error al subir:', e.message);
+    setStatus('⚠ Drive falló · Exporta local','red');
+    toast('⚠ Drive: '+e.message);
+    // Lanzar el error para que finalizar() lo capture y muestre en chat
+    throw e;
+  }
+}
+async function driveDescargar(){
+  try{
+    setStatus('Descargando desde Drive…','amber');
+    await driveLogin();
+    const fileId=await driveGetFileId();
+    if(!fileId){ toast('📭 No hay memoria en Drive aún'); setStatus('Listo · Memoria activa','green'); return; }
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${driveToken}`}});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d=await r.json();
+    if(d.cfg) cfg={...CFG_DEF,...d.cfg,key:cfg.key,salud:{...CFG_DEF.salud,...d.cfg.salud},familia:{...CFG_DEF.familia,...d.cfg.familia}};
+    if(d.mem) mem=d.mem;
+    if(d.bibData) bibData=d.bibData;
+    if(d.identidadViva) identidadViva=d.identidadViva;
+    if(d.contadorConv!=null) contadorConv=d.contadorConv;
+    // FIX v13.1: merge con defaults al restaurar desde Drive
+    if(d.statsHistorial) statsHistorial={gluc:[],peso:[],...d.statsHistorial};
+    if(d.diar) await dbSet('diario',d.diar);
+    await guardarTodo();
+    actualizarBadge(); actualizarDashboard();
+    toast('☁️ Memoria restaurada desde Drive ✓');
+    setStatus('Listo · Sync Drive ✓','green');
+    addMsg('leonor','☁️ **Memoria sincronizada desde Drive.**\nTodos tus recuerdos han vuelto, '+cfg.nombre+'. ¿En qué te ayudo?');
+  }catch(e){ toast('⚠ Drive: '+e.message); setStatus('Listo · Memoria activa','green'); }
+}
+
+// ═══ FAMILIA ═══
+function buscarFamilia(t){ const tl=t.toLowerCase(); if(tl.includes('mamá')||tl.includes('mama')) return 'Mamá: '+cfg.familia.mama; if(tl.includes('eli')) return 'Eli: '+cfg.familia.eli; if(tl.includes('pepe')) return 'Pepe: '+cfg.familia.pepe; return ''; }
+
+// ═══ MICRÓFONO v9 — fix definitivo ═══
+const MIC={inst:null,activo:false,finalText:''};
+function toggleMic(){
+  if(MIC.activo){ _micStop(); return; }
+  if(enviando){ toast('Espera la respuesta actual'); return; }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Usa Chrome para reconocimiento de voz'); return; }
+  _micDestroy();
+  MIC.inst=new SR(); MIC.inst.lang='es-MX'; MIC.inst.continuous=false; MIC.inst.interimResults=false; MIC.inst.maxAlternatives=1; MIC.finalText='';
+  const inp=document.getElementById('inp');
+  MIC.inst.onstart=()=>{ MIC.activo=true; MIC.finalText=''; document.getElementById('bmic').classList.add('rec'); inp.placeholder='🎙 Di tu mensaje…'; setStatus('🎙 Escuchando…','amber'); if(navigator.vibrate) navigator.vibrate([25,40,25]); };
+  MIC.inst.onresult=e=>{ if(!e.results.length) return; const t=e.results[0][0].transcript.trim(); if(!t) return; MIC.finalText=t; inp.value=t; resizeInp(inp); };
+  MIC.inst.onend=()=>{ MIC.activo=false; document.getElementById('bmic').classList.remove('rec'); inp.placeholder='Habla con Leonor… (/peso 95 · /gluc 110 · /calorias 300)'; if(MIC.finalText.trim()){ setStatus('✓ Revisa y toca ➤','amber'); inp.focus(); inp.selectionStart=inp.selectionEnd=inp.value.length; } else { setStatus('Listo · Memoria activa','green'); } if(navigator.vibrate) navigator.vibrate(30); MIC.inst=null; };
+  MIC.inst.onerror=e=>{ MIC.activo=false; _micDestroy(); document.getElementById('bmic').classList.remove('rec'); inp.placeholder='Habla con Leonor… (/peso 95 · /gluc 110 · /calorias 300)'; const msgs={'not-allowed':'Permiso de micrófono denegado.','no-speech':'No se detectó voz.','network':'Error de red.'}; toast(msgs[e.error]||'Error mic: '+e.error); setStatus('Listo · Memoria activa','green'); };
+  try{ MIC.inst.start(); }catch(e){ toast('Error iniciando micrófono'); _micDestroy(); }
+}
+function _micStop(){ MIC.activo=false; if(MIC.inst){ try{ MIC.inst.stop(); }catch(e){} } }
+function _micDestroy(){ if(MIC.inst){ try{ MIC.inst.abort(); }catch(e){} MIC.inst.onstart=MIC.inst.onresult=MIC.inst.onend=MIC.inst.onerror=null; MIC.inst=null; } MIC.activo=false; }
+
+// ═══ TTS ═══
+function toggleTTS(){ tts=!tts; document.getElementById('btts').classList.toggle('on',tts); if(!tts){ window.speechSynthesis.cancel(); setTimeout(()=>window.speechSynthesis.cancel(),50); } toast(tts?'🔊 Leonor hablará':'🔇 Voz desactivada'); }
+function speak(t){
+  window.speechSynthesis.cancel();
+  setTimeout(()=>{
+    window.speechSynthesis.cancel();
+    const limpio=t.replace(/<[^>]+>/g,'').replace(/[*_#`•►◄→←]/g,'').replace(/[\u{1F000}-\u{1FFFF}]/gu,'').replace(/═+/g,'').replace(/\t/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+    const u=new SpeechSynthesisUtterance(limpio);
+    u.lang='es-MX'; u.rate=0.9; u.pitch=1.05;
+    const vs=window.speechSynthesis.getVoices();
+    const v=vs.find(v=>v.lang.startsWith('es')&&/female|femenin|lucía|elena|mónica|paulina/i.test(v.name))||vs.find(v=>v.lang.startsWith('es'));
+    if(v) u.voice=v;
+    window.speechSynthesis.speak(u);
+  },100);
+}
+if(window.speechSynthesis&&window.speechSynthesis.onvoiceschanged!==undefined) window.speechSynthesis.onvoiceschanged=()=>{};
+
+// ═══ PWA ═══
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; document.getElementById('pwa-banner').classList.add('show'); });
+window.addEventListener('appinstalled',()=>{ document.getElementById('pwa-banner').classList.remove('show'); toast('✅ Leonor instalada'); });
+function instalarPWA(){ if(!deferredPrompt){ toast('Usa Chrome → Menú ⋮ → Añadir a pantalla de inicio'); return; } deferredPrompt.prompt(); deferredPrompt.userChoice.then(r=>{ if(r.outcome==='accepted') toast('✅ Instalando…'); deferredPrompt=null; document.getElementById('pwa-banner').classList.remove('show'); }); }
+
+// ═══ FOTO ═══
+function handleFoto(inp){ const f=inp.files[0]; if(!f) return; if(f.size>12*1024*1024){ toast('Foto muy grande (máx 12MB)'); inp.value=''; return; } const r=new FileReader(); r.onload=e=>{ pendImg=e.target.result.split(',')[1]; document.getElementById('inp').value='Analiza esta imagen...'; toast('📷 Foto lista · Toca ➤'); if(navigator.vibrate) navigator.vibrate(25); }; r.readAsDataURL(f); inp.value=''; }
+
+// ═══════════════════════════════════════
+// FINALIZAR v13 — CONSOLIDACIÓN NOCTURNA MEJORADA
+// Fusión de recuerdos · Descarte de viejos ·
+// Actualiza identidad viva · Sube a Drive
+// ═══════════════════════════════════════
+async function finalizar(){
+  if(!cfg.key||hist.length<2){ toast('Sin conversación suficiente'); return; }
+  if(!confirm('🌙 ¿Consolidación nocturna?\n· Resumen de sesión\n· Fusionar recuerdos similares\n· Descartar recuerdos de +30 días sin relevancia\n· Actualizar identidad viva\n· Subir todo a Drive')) return;
+  setStatus('Consolidando sesión…','amber');
+  try{
+    // 1. Resumen de la sesión
+    const resumen=await llamarGeminiDirecto(
+      'Escribe una entrada de diario breve (3-5 oraciones) desde la perspectiva de Leonor sobre esta conversación:\n'+hist.slice(-14).map(h=>(h.r==='user'?'Héctor: ':'Leonor: ')+h.t).join('\n'),
+      1800 // fix: subir maxTokens a 1800
+    );
+    await memGuardar('diario',resumen);
+    let diar=[]; try{ diar=(await dbGet('diario'))||[]; }catch(e){}
+    diar.unshift({f:new Date().toISOString(),e:resumen});
+    await dbSet('diario',diar.slice(0,60));
+    if(!bibData['diario']) bibData['diario']=[];
+    // Sin límite de entradas en diario — bug fix v13
+    bibData['diario'].unshift({resumen,fecha:new Date().toISOString(),vinculos:[]});
+
+    // 2. Fusionar recuerdos similares (consolidación)
+    await fusionarRecuerdos();
+
+    // 3. Descartar recuerdos de +30 días sin peso
+    descartarRecuerdosViejos();
+
+    // 4. Actualizar identidad viva con logros del día
+    if(mem.length>=5) await actualizarIdentidad();
+
+    hist=[];
+    await guardarTodo();
+
+    // 5. Subir a Drive — si falla, continuar con respaldo local
+    let driveOk=false;
+    try{
+      await driveSubir();
+      driveOk=true;
+    }catch(eDrive){
+      // driveSubir ya mostró el toast y puso status rojo
+      // Continuamos para entregar el respaldo local de todas formas
+    }
+
+    // 6. Respaldo local — SIEMPRE se descarga, Drive o no
+    let diarFull=[]; try{ diarFull=(await dbGet('diario'))||[]; }catch(e){}
+    const exportData={version:14,app:'Leonor-Gemini',exportado:new Date().toISOString(),cfg:{...cfg,key:'[PON_TU_KEY_AQUÍ]'},mem,diar:diarFull,bibData,identidadViva,statsHistorial};
+    const b=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); const urlExp=URL.createObjectURL(b);
+    a.href=urlExp; a.download=`leonor_v14_${new Date().toISOString().split('T')[0]}.json`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(urlExp),10000);
+
+    const driveMsg=driveOk?'_Subido a Drive ✓_':'_⚠ Drive falló — usa este respaldo local_';
+    addMsg('leonor',`🌙 **Consolidación nocturna completada.**\n\n${resumen}\n\n${driveMsg}`);
+    setStatus(driveOk?'Descansando · Hasta pronto':'⚠ Drive falló · Respaldo local OK',driveOk?'green':'red');
+    toast(driveOk?'🌙 Todo guardado ✓':'🌙 Guardado local · Drive falló');
+    if(navigator.vibrate) navigator.vibrate([30,20,30]);
+  }catch(e){ toast('Error al guardar: '+e.message); setStatus('Listo · Memoria activa','green'); }
+}
+
+// ═══ CONSOLIDACIÓN: Fusionar recuerdos similares ═══
+// FIX v13.1: operamos sobre un snapshot de mem para evitar desfase de índices
+// al mutar el array durante el loop. Los embeddings se obtienen con await correcto.
+async function fusionarRecuerdos(){
+  if(mem.length<10||!cfg.key) return;
+  try{
+    const snapshot=mem.slice(0,50); // snapshot fijo — no muta durante el análisis
+    const aFusionar=[];
+    const usados=new Set();
+
+    for(let i=0;i<snapshot.length;i++){
+      if(usados.has(i)) continue;
+      const grupo=[snapshot[i]];
+      for(let j=i+1;j<snapshot.length;j++){
+        if(usados.has(j)) continue;
+        const s=cosim(snapshot[i].vec,snapshot[j].vec);
+        if(s>0.85){ grupo.push(snapshot[j]); usados.add(j); }
+      }
+      if(grupo.length>1){ aFusionar.push(grupo); usados.add(i); }
+    }
+    if(!aFusionar.length) return;
+
+    // Procesar hasta 5 grupos — cada fusión es sequential y awaiteada correctamente
+    const gruposAProcesar=aFusionar.slice(0,5);
+    const recuerdosFusionados=[];
+    const txtARemover=new Set();
+
+    for(const grupo of gruposAProcesar){
+      const textos=grupo.map(r=>r.txt).join('\n\n');
+      const fusionado=await llamarGeminiDirecto(
+        `Fusiona estos recuerdos similares en uno solo, conservando toda la información esencial en 2-3 oraciones concisas:\n\n${textos}`,
+        300
+      );
+      if(fusionado){
+        // FIX v13.1: await correcto para obtenerEmbedding del texto fusionado
+        let vec=await obtenerEmbedding(fusionado);
+        if(!vec) vec=embedHash(fusionado);
+        recuerdosFusionados.push({tipo:'fusionado',txt:fusionado,vec,f:new Date().toISOString()});
+        grupo.forEach(r=>txtARemover.add(r.txt));
+      }
+    }
+
+    // Mutar mem una sola vez al final, fuera del loop
+    if(txtARemover.size>0){
+      mem=mem.filter(r=>!txtARemover.has(r.txt));
+      mem.unshift(...recuerdosFusionados);
+      toast(`🔗 ${recuerdosFusionados.length} grupo${recuerdosFusionados.length!==1?'s':''} fusionado${recuerdosFusionados.length!==1?'s':''}`);
+    }
+  }catch(e){ console.warn('Error fusionando recuerdos:',e); }
+}
+
+// ═══ CONSOLIDACIÓN: Descartar recuerdos viejos (30 días sin relevancia) ═══
+function descartarRecuerdosViejos(){
+  const hace30=new Date(Date.now()-30*24*60*60*1000);
+  const antes=mem.length;
+  // Solo descarta tipo 'dialogo' — los 'guardado', 'diario', 'fusionado', 'biblioteca' se conservan
+  mem=mem.filter(r=>{
+    if(r.tipo==='dialogo'){
+      return new Date(r.f)>hace30;
+    }
+    return true;
+  });
+  const descartados=antes-mem.length;
+  if(descartados>0) toast(`🗑 ${descartados} recuerdos de diálogo antiguos descartados`);
+}
+
+// ═══ GENERAR IMAGEN ═══
+function openGenImg(){ document.getElementById('ov-img').classList.add('open'); }
+function closeGenImg(){ document.getElementById('ov-img').classList.remove('open'); }
+async function generarImagen(){
+  if(!cfg.key){ toast('⚙ Necesitas tu API Key'); return; }
+  const promptBase=document.getElementById('img-prompt').value.trim();
+  if(!promptBase){ toast('Describe la imagen primero'); return; }
+  const estilo=document.getElementById('img-estilo').value;
+  const prompt=promptBase+(estilo?`, ${estilo}`:'');
+  const btn=document.getElementById('gen-img-btn');
+  btn.disabled=true; btn.textContent='⏳ Generando…';
+  closeGenImg(); setStatus('Generando imagen…','amber'); addMsg('user',`🍌 Crear imagen: "${promptBase}"`);
+  try{
+    const modelId=MODEL_IDS[cfg.imgModelo]||'gemini-2.5-flash-image';
+    const r=await fetch(`${GEMINI_URL}/${modelId}:generateContent?key=${cfg.key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
+    if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||`HTTP ${r.status}`); }
+    const data=await r.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    const imgPart=parts.find(p=>p.inlineData?.mimeType?.startsWith('image'));
+    const textPart=parts.find(p=>p.text);
+    if(imgPart){
+      const imgData=imgPart.inlineData.data,imgMime=imgPart.inlineData.mimeType;
+      const chat=document.getElementById('chat');
+      const d=document.createElement('div'); d.className='msg leonor';
+      d.innerHTML=`<div class="av">L</div><div class="mc"><div class="mn">Leonor · Imagen 🍌</div><div class="mb">${textPart?renderMd(textPart.text)+'<br>':''}<img src="data:${imgMime};base64,${imgData}" alt="imagen generada" loading="lazy" style="max-width:100%;border-radius:10px;margin-top:6px;display:block"><div class="msg-acts" style="margin-top:8px"><button class="mab">⬇ Descargar</button></div></div></div>`;
+      d.querySelector('.mab').addEventListener('click',()=>{ const a=document.createElement('a'); a.href=`data:${imgMime};base64,${imgData}`; a.download=`leonor_${Date.now()}.png`; a.click(); toast('⬇ Imagen descargada'); });
+      chat.appendChild(d); chat.scrollTop=chat.scrollHeight; setStatus('Listo · Imagen generada ✓','green');
+    } else if(textPart){ addMsg('leonor',textPart.text); setStatus('Listo · Memoria activa','green'); }
+    else throw new Error('No se recibió imagen. Intenta con otra descripción.');
+  }catch(e){ addMsg('leonor',`⚠ **Error generando imagen:** ${e.message}`); setStatus('Error','red'); }
+  finally{ btn.disabled=false; btn.textContent='🍌 Generar imagen'; }
+}
+
+// ═══ CONFIG UI ═══
+function openCfg(){
+  const f=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  f('c-key',cfg.key); f('c-nom',cfg.nombre); f('c-mod',cfg.modelo); f('c-imgmod',cfg.imgModelo); f('c-rsp',cfg.rsp);
+  f('c-alma',cfg.alma); f('c-ctx',cfg.ctx); f('c-peso',cfg.salud.peso); f('c-meta',cfg.salud.meta);
+  f('c-gluc',cfg.salud.gluc); f('c-pres',cfg.salud.pres); f('c-calobj',cfg.salud.calobj); f('c-snot',cfg.salud.notas);
+  f('c-mama',cfg.familia.mama); f('c-eli',cfg.familia.eli); f('c-pepe',cfg.familia.pepe); f('c-otros',cfg.familia.otros);
+  document.getElementById('ov-cfg').classList.add('open');
+}
+function closeCfg(){ document.getElementById('ov-cfg').classList.remove('open'); }
+async function guardarCfg(){
+  const g=id=>(document.getElementById(id)?.value||'').trim();
+  if(!g('c-key')){ toast('⚠ La API Key no puede estar vacía'); return; }
+  cfg.key=g('c-key'); cfg.nombre=g('c-nom')||'Héctor';
+  cfg.modelo=document.getElementById('c-mod').value; cfg.imgModelo=document.getElementById('c-imgmod').value;
+  cfg.rsp=document.getElementById('c-rsp').value; cfg.alma=g('c-alma'); cfg.ctx=g('c-ctx');
+  cfg.salud={peso:g('c-peso'),meta:g('c-meta'),gluc:g('c-gluc'),pres:g('c-pres'),notas:g('c-snot'),calobj:g('c-calobj'),calHoy:cfg.salud.calHoy};
+  cfg.familia={mama:g('c-mama'),eli:g('c-eli'),pepe:g('c-pepe'),otros:g('c-otros')};
+  await guardarTodo(); actualizarBadge(); actualizarDashboard(); closeCfg(); toast('✓ Guardado');
+  if(navigator.vibrate) navigator.vibrate([25,25,25]);
+}
+function showTab(id,btn){ ['api','alma','ctx','salud','fam','sync'].forEach(t=>{ const el=document.getElementById('t-'+t); if(el) el.style.display=t===id?'block':'none'; }); document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+
+// ═══ MEMORIA UI — v14: buscador integrado ═══
+function openMem(){
+  document.getElementById('mem-search').value='';
+  renderMemList('');
+  document.getElementById('ov-mem').classList.add('open');
+}
+function closeMem(){ document.getElementById('ov-mem').classList.remove('open'); }
+
+function filtrarMem(q){ renderMemList(q); }
+
+function renderMemList(q){
+  const ql=q.toLowerCase().trim();
+  const stats=document.getElementById('mem-stats');
+  const list=document.getElementById('mem-list');
+  const filtrados=ql
+    ?mem.filter(m=>m.txt.toLowerCase().includes(ql)||m.tipo.toLowerCase().includes(ql))
+    :mem;
+  stats.textContent=`${mem.length} recuerdos${ql?` · ${filtrados.length} coincidencias`:''} · IndexedDB${modeBuf?' · 🟠 SANDBOX':''}`;
+  if(!filtrados.length){
+    list.innerHTML=`<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">${ql?`Sin resultados para "${escH(q)}"`:' Sin recuerdos aún'}</p>`;
+    return;
+  }
+  list.innerHTML=filtrados.slice(0,50).map(m=>{
+    const fecha=new Date(m.f).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'});
+    // Resaltar término buscado
+    const txt=ql
+      ?escH(m.txt).replace(new RegExp(`(${ql.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<mark style="background:rgba(111,207,151,.2);color:var(--warm);border-radius:2px">$1</mark>')
+      :escH(m.txt);
+    return `<div class="mit"><div class="mm">${escH(m.tipo)} · ${escH(fecha)}</div>${txt}</div>`;
+  }).join('');
+}
+
+async function limpiarMem(){ if(!confirm('¿Borrar toda la memoria?')) return; mem=[]; identidadViva=''; await guardarTodo(); closeMem(); toast('🗑 Memoria limpiada'); }
+
+// ═══ BIBLIOTECA UI — v14: buscador + filtro por carpeta + historial completo ═══
+let bibFiltroNivel=null; // null = todos los niveles
+
+function openBib(){
+  bibFiltroNivel=null;
+  document.getElementById('bib-search').value='';
+  renderFiltrosBib();
+  renderBibList('');
+  document.getElementById('ov-bib').classList.add('open');
+}
+function closeBib(){ document.getElementById('ov-bib').classList.remove('open'); }
+
+function renderFiltrosBib(){
+  const row=document.getElementById('bib-filter-row');
+  const conEntradas=NIVELES.filter(n=>(bibData[n.id]||[]).length>0);
+  if(!conEntradas.length){ row.innerHTML=''; return; }
+  row.innerHTML=['<button class="bib-fchip on" onclick="setBibFiltro(null,this)">Todos</button>',
+    ...conEntradas.map(n=>`<button class="bib-fchip" onclick="setBibFiltro('${n.id}',this)">${n.icon} ${n.label} (${bibData[n.id].length})</button>`)
+  ].join('');
+}
+
+function setBibFiltro(nivelId,btn){
+  bibFiltroNivel=nivelId;
+  document.querySelectorAll('.bib-fchip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  filtrarBib(document.getElementById('bib-search').value);
+}
+
+function filtrarBib(q){
+  renderBibList(q);
+}
+
+function renderBibList(q){
+  const list=document.getElementById('bib-list');
+  const lbl=document.getElementById('bib-count-lbl');
+  const ql=q.toLowerCase().trim();
+
+  // Recopilar entradas según filtro de nivel
+  const nivelesAMostrar=bibFiltroNivel
+    ?NIVELES.filter(n=>n.id===bibFiltroNivel)
+    :NIVELES;
+
+  let totalEntradas=0;
+  let html='';
+
+  for(const n of nivelesAMostrar){
+    const entradas=(bibData[n.id]||[]);
+    if(!entradas.length) continue;
+
+    // Filtrar por búsqueda si hay query
+    const filtradas=ql
+      ?entradas.filter(e=>(e.resumen||'').toLowerCase().includes(ql)||(e.raw||'').toLowerCase().includes(ql))
+      :entradas;
+    if(!filtradas.length) continue;
+
+    totalEntradas+=filtradas.length;
+    html+=`<div style="margin-bottom:14px">`;
+    html+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--warm);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">${n.icon} ${n.label} · ${filtradas.length} entrada${filtradas.length!==1?'s':''}</div>`;
+
+    // Mostrar hasta 5 entradas por carpeta — expandible
+    const mostrar=filtradas.slice(0,5);
+    for(const e of mostrar){
+      const fecha=e.fecha?new Date(e.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'}):'';
+      const prev=e.resumen?.substring(0,180)||'';
+      const vinH=e.vinculos?.length?`<div style="margin-top:4px">${e.vinculos.map(v=>`<span class="link-tag">${escH(v.substring(0,50))}</span>`).join('')}</div>`:'';
+      // Resaltar término buscado
+      const prevResaltado=ql?prev.replace(new RegExp(`(${ql.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<mark style="background:rgba(111,207,151,.2);color:var(--warm);border-radius:2px">$1</mark>'):escH(prev);
+      html+=`<div class="bib-entry-full"><div class="bef-hdr"><span class="bef-nm">${n.icon} ${n.label}</span><span class="bef-dt">${escH(fecha)}</span></div><div>${ql?prevResaltado:escH(prev)}${prev.length>=180?'…':''}</div>${vinH}</div>`;
+    }
+    if(filtradas.length>5){
+      html+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--soft);text-align:center;padding:4px 0">+${filtradas.length-5} entradas más en esta carpeta</div>`;
+    }
+    html+=`</div>`;
+  }
+
+  if(!html){
+    html=`<p style="color:var(--soft);text-align:center;padding:20px;font-size:14px">${ql?`Sin resultados para "${escH(q)}"`:bibFiltroNivel?'Esta carpeta está vacía':'Biblioteca vacía · Usa 📋 Buffer o 📥 Archivar'}</p>`;
+  }
+
+  const totalGeneral=Object.values(bibData).reduce((s,a)=>s+(a?.length||0),0);
+  lbl.textContent=`${totalGeneral} entrada${totalGeneral!==1?'s':''} en total${ql?` · Filtrando: "${q}"`:''}`; 
+  list.innerHTML=html;
+}
+
+async function limpiarBib(){ if(!confirm('¿Vaciar toda la Biblioteca?')) return; bibData={}; await guardarTodo(); closeBib(); toast('🗑 Biblioteca vaciada'); }
+
+// ═══ EXPORT / IMPORT ═══
+async function exportarDatos(){
+  let diar=[]; try{ diar=(await dbGet('diario'))||[]; }catch(e){}
+  const data={version:13,app:'Leonor-Gemini',exportado:new Date().toISOString(),cfg:{...cfg,key:'[PON_TU_KEY_AQUÍ]'},mem,diar,bibData,identidadViva,statsHistorial};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); const url=URL.createObjectURL(b);
+  a.href=url; a.download=`leonor_v13_${new Date().toISOString().split('T')[0]}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast('📤 Exportado');
+}
+async function importarDatos(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=async e=>{ try{
+    const d=JSON.parse(e.target.result);
+    if(d.cfg) cfg={...CFG_DEF,...d.cfg,salud:{...CFG_DEF.salud,...d.cfg.salud},familia:{...CFG_DEF.familia,...d.cfg.familia}};
+    cfg.key='';
+    if(d.mem) mem=d.mem;
+    if(d.bibData) bibData=d.bibData;
+    if(d.identidadViva) identidadViva=d.identidadViva;
+    if(d.statsHistorial) statsHistorial=d.statsHistorial;
+    if(d.diar) await dbSet('diario',d.diar);
+    await guardarTodo(); actualizarBadge(); actualizarDashboard();
+    toast('✓ Importado. Pon tu API Key en ⚙');
+  }catch(err){ toast('Error importando: '+err.message); } }; r.readAsText(f);
+}
+
+// ═══ HELPERS ═══
+function setStatus(t,c){ document.getElementById('stxt').textContent=t; document.getElementById('sdot').style.background=c==='green'?'var(--green)':c==='amber'?'var(--amber)':'var(--red)'; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._tid); t._tid=setTimeout(()=>t.classList.remove('show'),3000); }
+</script>
+</body>
+</html>
