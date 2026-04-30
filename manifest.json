@@ -2,8 +2,8 @@
   "name": "Leonor 2.0",
   "short_name": "Leonor",
   "description": "Asistente personal con IA · Gemini · v14",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/Leonor_index/",
+  "scope": "/Leonor_index/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f1a14",
@@ -27,7 +27,7 @@
   "shortcuts": [
     {
       "name": "Abrir Leonor",
-      "url": "/",
+      "url": "/Leonor_index/",
       "description": "Abrir asistente"
     }
   ]
